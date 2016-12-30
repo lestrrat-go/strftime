@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	jehiah "github.com/jehiah/go-strftime"
 	lestrrat "github.com/lestrrat/go-strftime"
 	tebeka "github.com/tebeka/strftime"
 )
@@ -29,6 +30,14 @@ func BenchmarkTebeka(b *testing.B) {
 	}
 }
 
+func BenchmarkJehiah(b *testing.B) {
+	// Grr, uses byte slices, and does it faster, but with more allocs
+	var t time.Time
+	for i := 0; i < b.N; i++ {
+		jehiah.Format(benchfmt, t)
+	}
+}
+
 func BenchmarkLestrrat(b *testing.B) {
 	var t time.Time
 	for i := 0; i < b.N; i++ {
@@ -40,6 +49,10 @@ func BenchmarkLestrratCached(b *testing.B) {
 	var t time.Time
 	f, _ := lestrrat.New(benchfmt)
 	var buf bytes.Buffer
+	b.ResetTimer()
+
+	// This benchmark does not take into effect the compilation time
+	// nor the buffer reset time
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		buf.Reset()

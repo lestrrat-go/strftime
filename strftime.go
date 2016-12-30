@@ -37,29 +37,31 @@ func canCombine(s string) bool {
 	return true
 }
 
-type verbatim string
+type verbatim struct {
+	s string
+}
 
 func (v verbatim) Write(w io.Writer, _ time.Time) error {
-	if _, err := io.WriteString(w, string(v)); err != nil {
+	if _, err := io.WriteString(w, v.s); err != nil {
 		return errors.Wrap(err, `failed to write verbatim string`)
 	}
 	return nil
 }
 
 func (v verbatim) canCombine() bool {
-	return canCombine(string(v))
+	return canCombine(v.s)
 }
 
 func (v verbatim) combine(w combiner) writer {
 	if _, ok := w.(timefmt); ok {
-		return timefmt(string(v) + w.str())
+		return timefmt{s: v.s + w.str()}
 	} else {
-		return verbatim(string(v) + w.str())
+		return verbatim{s: v.s + w.str()}
 	}
 }
 
 func (v verbatim) str() string {
-	return string(v)
+	return v.s
 }
 
 type combiner interface {
@@ -69,17 +71,19 @@ type combiner interface {
 }
 
 // does the time.Format thing
-type timefmt string
+type timefmt struct {
+	s string
+}
 
 func (v timefmt) Write(w io.Writer, t time.Time) error {
-	if _, err := io.WriteString(w, t.Format(string(v))); err != nil {
+	if _, err := io.WriteString(w, t.Format(v.s)); err != nil {
 		return errors.Wrap(err, `failed to write timefmt string`)
 	}
 	return nil
 }
 
 func (v timefmt) str() string {
-	return string(v)
+	return v.s
 }
 
 func (v timefmt) canCombine() bool {
@@ -87,7 +91,7 @@ func (v timefmt) canCombine() bool {
 }
 
 func (v timefmt) combine(w combiner) writer {
-	return timefmt(string(v) + w.str())
+	return timefmt{s: v.s + w.str()}
 }
 
 type century struct{}
@@ -224,7 +228,7 @@ func compile(wl *writerList, p string) error {
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 || i == l-1 {
-			appendw(verbatim(p))
+			appendw(verbatim{s: p})
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -235,35 +239,35 @@ func compile(wl *writerList, p string) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			appendw(verbatim(p[:i]))
+			appendw(verbatim{s: p[:i]})
 			p = p[i:]
 		}
 
 		switch c := p[1]; c {
 		case 'A':
-			appendw(timefmt("Monday"))
+			appendw(timefmt{s: "Monday"})
 		case 'a':
-			appendw(timefmt("Mon"))
+			appendw(timefmt{s: "Mon"})
 		case 'B':
-			appendw(timefmt("January"))
+			appendw(timefmt{s: "January"})
 		case 'b', 'h':
-			appendw(timefmt("Jan"))
+			appendw(timefmt{s: "Jan"})
 		case 'C':
 			appendw(century{})
 		case 'c':
-			appendw(timefmt("Mon Jan _2 15:04:05 2006"))
+			appendw(timefmt{s: "Mon Jan _2 15:04:05 2006"})
 		case 'D':
-			appendw(timefmt("01/02/06"))
+			appendw(timefmt{s: "01/02/06"})
 		case 'd':
-			appendw(timefmt("02"))
+			appendw(timefmt{s: "02"})
 		case 'e':
-			appendw(timefmt("_2"))
+			appendw(timefmt{s: "_2"})
 		case 'F':
-			appendw(timefmt("2006-01-02"))
+			appendw(timefmt{s: "2006-01-02"})
 		case 'H':
-			appendw(timefmt("15"))
+			appendw(timefmt{s: "15"})
 		case 'I':
-			appendw(timefmt("3"))
+			appendw(timefmt{s: "3"})
 		case 'j':
 			appendw(dayofyear{})
 		case 'k':
@@ -271,23 +275,23 @@ func compile(wl *writerList, p string) error {
 		case 'l':
 			appendw(hourwblank(true))
 		case 'M':
-			appendw(timefmt("04"))
+			appendw(timefmt{s: "04"})
 		case 'm':
-			appendw(timefmt("01"))
+			appendw(timefmt{s: "01"})
 		case 'n':
-			appendw(verbatim("\n"))
+			appendw(verbatim{s: "\n"})
 		case 'p':
-			appendw(timefmt("PM"))
+			appendw(timefmt{s: "PM"})
 		case 'R':
-			appendw(timefmt("15:04"))
+			appendw(timefmt{s: "15:04"})
 		case 'r':
-			appendw(timefmt("3:04:05 PM"))
+			appendw(timefmt{s: "3:04:05 PM"})
 		case 'S':
-			appendw(timefmt("05"))
+			appendw(timefmt{s: "05"})
 		case 'T':
-			appendw(timefmt("15:04:05"))
+			appendw(timefmt{s: "15:04:05"})
 		case 't':
-			appendw(verbatim("\t"))
+			appendw(verbatim{s: "\t"})
 		case 'U': // week number of the year, Sunday first
 			appendw(weeknumberOffset(0))
 		case 'u':
@@ -295,25 +299,25 @@ func compile(wl *writerList, p string) error {
 		case 'V':
 			appendw(weeknumber{})
 		case 'v':
-			appendw(timefmt("_2-Jan-2006"))
+			appendw(timefmt{s: "_2-Jan-2006"})
 		case 'W': // week number of the year, Monday first
 			appendw(weeknumberOffset(1))
 		case 'w':
 			appendw(weekday(0))
 		case 'X': // national representation of the time
 			// XXX is this correct?
-			appendw(timefmt("15:04:05"))
+			appendw(timefmt{s: "15:04:05"})
 		case 'x': // national representation of the date
 			// XXX is this correct?
-			appendw(timefmt("01/02/06"))
+			appendw(timefmt{s: "01/02/06"})
 		case 'Y': // year with century
-			appendw(timefmt("2006"))
+			appendw(timefmt{s: "2006"})
 		case 'y': // year w/o century
-			appendw(timefmt("06"))
+			appendw(timefmt{s: "06"})
 		case 'Z': // time zone name
-			appendw(timefmt("MST"))
+			appendw(timefmt{s: "MST"})
 		case 'z': // time zone ofset from UTC
-			appendw(timefmt("-0700"))
+			appendw(timefmt{s: "-0700"})
 		default:
 			return errors.Errorf(`unknown time format specification '%c'`, c)
 		}
