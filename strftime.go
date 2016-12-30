@@ -349,6 +349,7 @@ func New(f string) (*Strftime, error) {
 	if err := compile(&wl, f); err != nil {
 		return nil, errors.Wrap(err, `failed to compile format`)
 	}
+	// fmt.Printf("%#v\n", wl)
 	return &Strftime{
 		compiled: wl,
 	}, nil
