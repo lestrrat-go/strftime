@@ -3,7 +3,6 @@ package strftime
 import (
 	"bytes"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -204,7 +203,6 @@ func (v hourwblank) Write(w io.Writer, t time.Time) error {
 func compile(wl *writerList, p string) error {
 	var prev writer
 	var prevCanCombine bool
-	var prevT reflect.Type
 	var appendw = func(w writer) {
 		if prevCanCombine {
 			if wc, ok := w.(combiner); ok && wc.canCombine() {
@@ -217,7 +215,6 @@ func compile(wl *writerList, p string) error {
 		*wl = append(*wl, w)
 		prev = w
 		prevCanCombine = false
-		prevT = reflect.TypeOf(prev)
 		if comb, ok := w.(combiner); ok {
 			if comb.canCombine() {
 				prevCanCombine = true
