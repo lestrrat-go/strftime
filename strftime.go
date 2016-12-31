@@ -1,12 +1,12 @@
 package strftime
 
 import (
-	"bytes"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 
+	bufferpool "github.com/lestrrat/go-bufferpool"
 	"github.com/pkg/errors"
 )
 
@@ -53,11 +53,10 @@ func (v verbatim) canCombine() bool {
 }
 
 func (v verbatim) combine(w combiner) writer {
-	if _, ok := w.(timefmt); ok {
-		return timefmt{s: v.s + w.str()}
-	} else {
-		return verbatim{s: v.s + w.str()}
+	if _, ok := w.(*timefmt); ok {
+		return &timefmt{s: v.s + w.str()}
 	}
+	return &verbatim{s: v.s + w.str()}
 }
 
 func (v verbatim) str() string {
@@ -91,7 +90,7 @@ func (v timefmt) canCombine() bool {
 }
 
 func (v timefmt) combine(w combiner) writer {
-	return timefmt{s: v.s + w.str()}
+	return &timefmt{s: v.s + w.str()}
 }
 
 type century struct{}
@@ -204,6 +203,46 @@ func (v hourwblank) Write(w io.Writer, t time.Time) error {
 	return nil
 }
 
+var directives = map[byte]writer{
+	'A': &timefmt{s: "Monday"},
+	'a': &timefmt{s: "Mon"},
+	'B': &timefmt{s: "January"},
+	'b': &timefmt{s: "Jan"},
+	'C': &century{},
+	'h': &timefmt{s: "Jan"}, // same as 'b'
+	'c': &timefmt{s: "Mon Jan _2 15:04:05 2006"},
+	'D': &timefmt{s: "01/02/06"},
+	'd': &timefmt{s: "02"},
+	'e': &timefmt{s: "_2"},
+	'F': &timefmt{s: "2006-01-02"},
+	'H': &timefmt{s: "15"},
+	'I': &timefmt{s: "3"},
+	'j': &dayofyear{},
+	'k': hourwblank(false),
+	'l': hourwblank(true),
+	'M': &timefmt{s: "04"},
+	'm': &timefmt{s: "01"},
+	'n': verbatim{s: "\n"},
+	'p': &timefmt{s: "PM"},
+	'R': &timefmt{s: "15:04"},
+	'r': &timefmt{s: "3:04:05 PM"},
+	'S': &timefmt{s: "05"},
+	'T': &timefmt{s: "15:04:05"},
+	't': &verbatim{s: "\t"},
+	'U': weeknumberOffset(0), // week number of the year, Sunday first
+	'u': weekday(1),
+	'V': &weeknumber{},
+	'v': &timefmt{s: "_2-Jan-2006"},
+	'W': weeknumberOffset(1), // week number of the year, Monday first
+	'w': weekday(0),
+	'X': &timefmt{s: "15:04:05"}, // national representation of the time XXX is this correct?
+	'x': &timefmt{s: "01/02/06"}, // national representation of the date XXX is this correct?
+	'Y': &timefmt{s: "2006"},     // year with century
+	'y': &timefmt{s: "06"},       // year w/o century
+	'Z': &timefmt{s: "MST"},      // time zone name
+	'z': &timefmt{s: "-0700"},    // time zone ofset from UTC
+}
+
 func compile(wl *writerList, p string) error {
 	var prev writer
 	var prevCanCombine bool
@@ -243,118 +282,61 @@ func compile(wl *writerList, p string) error {
 			p = p[i:]
 		}
 
-		switch c := p[1]; c {
-		case 'A':
-			appendw(timefmt{s: "Monday"})
-		case 'a':
-			appendw(timefmt{s: "Mon"})
-		case 'B':
-			appendw(timefmt{s: "January"})
-		case 'b', 'h':
-			appendw(timefmt{s: "Jan"})
-		case 'C':
-			appendw(century{})
-		case 'c':
-			appendw(timefmt{s: "Mon Jan _2 15:04:05 2006"})
-		case 'D':
-			appendw(timefmt{s: "01/02/06"})
-		case 'd':
-			appendw(timefmt{s: "02"})
-		case 'e':
-			appendw(timefmt{s: "_2"})
-		case 'F':
-			appendw(timefmt{s: "2006-01-02"})
-		case 'H':
-			appendw(timefmt{s: "15"})
-		case 'I':
-			appendw(timefmt{s: "3"})
-		case 'j':
-			appendw(dayofyear{})
-		case 'k':
-			appendw(hourwblank(false))
-		case 'l':
-			appendw(hourwblank(true))
-		case 'M':
-			appendw(timefmt{s: "04"})
-		case 'm':
-			appendw(timefmt{s: "01"})
-		case 'n':
-			appendw(verbatim{s: "\n"})
-		case 'p':
-			appendw(timefmt{s: "PM"})
-		case 'R':
-			appendw(timefmt{s: "15:04"})
-		case 'r':
-			appendw(timefmt{s: "3:04:05 PM"})
-		case 'S':
-			appendw(timefmt{s: "05"})
-		case 'T':
-			appendw(timefmt{s: "15:04:05"})
-		case 't':
-			appendw(verbatim{s: "\t"})
-		case 'U': // week number of the year, Sunday first
-			appendw(weeknumberOffset(0))
-		case 'u':
-			appendw(weekday(1))
-		case 'V':
-			appendw(weeknumber{})
-		case 'v':
-			appendw(timefmt{s: "_2-Jan-2006"})
-		case 'W': // week number of the year, Monday first
-			appendw(weeknumberOffset(1))
-		case 'w':
-			appendw(weekday(0))
-		case 'X': // national representation of the time
-			// XXX is this correct?
-			appendw(timefmt{s: "15:04:05"})
-		case 'x': // national representation of the date
-			// XXX is this correct?
-			appendw(timefmt{s: "01/02/06"})
-		case 'Y': // year with century
-			appendw(timefmt{s: "2006"})
-		case 'y': // year w/o century
-			appendw(timefmt{s: "06"})
-		case 'Z': // time zone name
-			appendw(timefmt{s: "MST"})
-		case 'z': // time zone ofset from UTC
-			appendw(timefmt{s: "-0700"})
-		default:
-			return errors.Errorf(`unknown time format specification '%c'`, c)
+		directive, ok := directives[p[1]]
+		if !ok {
+			return errors.Errorf(`unknown time format specification '%c'`, p[1])
 		}
+		appendw(directive)
 		p = p[2:]
 	}
 
 	return nil
 }
 
+var bbpool = bufferpool.New()
+
+// Format takes the format `s` and the time `t` to produce the
+// format date/time. Note that this function re-compiles the
+// pattern every time it is called.
+//
+// If you know beforehand that you will be reusing the pattern
+// within your application, consider creating a `Strftime` object
+// and reusing it.
 func Format(s string, t time.Time) (string, error) {
 	f, err := New(s)
 	if err != nil {
 		return "", err
 	}
 
-	var buf bytes.Buffer
-	if err := f.Format(&buf, t); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	return f.FormatString(t)
 }
 
+// Strftime is the object that represents a compiled strftime pattern
 type Strftime struct {
+	pattern  string
 	compiled writerList
 }
 
+// New creates a new Strftime object. If the compilation fails, then
+// an error is returned in the second argument.
 func New(f string) (*Strftime, error) {
 	var wl writerList
 	if err := compile(&wl, f); err != nil {
 		return nil, errors.Wrap(err, `failed to compile format`)
 	}
-	// fmt.Printf("%#v\n", wl)
 	return &Strftime{
+		pattern:  f,
 		compiled: wl,
 	}, nil
 }
 
+// Pattern returns the original pattern string
+func (f *Strftime) Pattern() string {
+	return f.pattern
+}
+
+// Format takes the destination `buf` and time `t`. It formats the date/time
+// using the pre-compiled pattern, and outputs the results to `buf`
 func (f *Strftime) Format(buf io.Writer, t time.Time) error {
 	wl := f.compiled
 	for _, w := range wl {
@@ -363,4 +345,16 @@ func (f *Strftime) Format(buf io.Writer, t time.Time) error {
 		}
 	}
 	return nil
+}
+
+// FormatString takes the time `t` and formats it, returning the
+// string containing the formated data.
+func (f *Strftime) FormatString(t time.Time) (string, error) {
+	buf := bbpool.Get()
+	defer bbpool.Release(buf)
+
+	if err := f.Format(buf, t); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

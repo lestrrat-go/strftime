@@ -15,7 +15,29 @@ if err := f.Format(buf, time.Now()); err != nil {
 
 VERY ALPHA CODE. More tests needed
 
-# PERFORMANCE
+# API
+
+## Format(string, time.Time) (string, error)
+
+Takes the pattern and the time, and formats it. This function is a utility function that recompiles the pattern every time the function is called. If you know beforehand that you will be formatting the same pattern multiple times, consider using `New` to create a `Strftime` object and reuse it.
+
+## New(string) (\*Strftime, error)
+
+Takes the pattern and creates a new `Strftime` object.
+
+## obj.Pattern() string
+
+Returns the pattern string used to create this `Strftime` object
+
+## obj.Format(io.Writer, time.Time) error
+
+Formats the time according to the pre-compiled pattern, and writes the result to the specified `io.Writer`
+
+## obj.FormatString(time.Time) (string, error)
+
+Formats the time according to the pre-compiled pattern, and returns the result string.
+
+# PERFORMANCE / OTHER LIBRARIES
 
 This library is much faster than `github.com/tebeka/strftime` *IF* you can reuse the format pattern. Furthermore, depending on your pattern, we may not be able to achieve much speed gain. Patches, tests welcome.
 
