@@ -57,10 +57,10 @@ Somethings to consider:
 ```
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                 200000          5321 ns/op         480 B/op         23 allocs/op
-BenchmarkJehiah-4                1000000          2020 ns/op         256 B/op         17 allocs/op
-BenchmarkLestrrat-4               200000          7822 ns/op        3016 B/op         92 allocs/op
-BenchmarkLestrratCached-4         500000          2588 ns/op         176 B/op          2 allocs/op
+BenchmarkTebeka-4                 300000          5094 ns/op         480 B/op         23 allocs/op
+BenchmarkJehiah-4                1000000          1972 ns/op         256 B/op         17 allocs/op
+BenchmarkLestrrat-4               200000          7206 ns/op        2600 B/op         75 allocs/op
+BenchmarkLestrratCached-4         500000          2636 ns/op         176 B/op          2 allocs/op
 PASS
-ok      github.com/lestrrat/go-strftime 17.835s
+ok      github.com/lestrrat/go-strftime 18.188s
 ```
