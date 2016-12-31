@@ -4,6 +4,7 @@ package strftime_test
 
 import (
 	"bytes"
+	"io"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -58,5 +59,23 @@ func BenchmarkLestrratCached(b *testing.B) {
 		buf.Reset()
 		b.StartTimer()
 		f.Format(&buf, t)
+	}
+}
+
+func formatGenerated(buf io.Writer, t time.Time) error {
+	if _, err := io.WriteString(buf, t.Format("Monday Mon January Jan Mon Jan _2 15:04:05 2006 02 15 3 04 01 PM 05 2006 06 MST")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func BenchmarkLestrratGenerated(b *testing.B) {
+	var t time.Time
+	var buf bytes.Buffer
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		buf.Reset()
+		b.StartTimer()
+		formatGenerated(&buf, t)
 	}
 }

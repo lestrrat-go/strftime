@@ -1,7 +1,10 @@
 package strftime
 
 import (
+	"fmt"
+	"go/format"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -164,4 +167,34 @@ func (f *Strftime) FormatString(t time.Time) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (f *Strftime) Generate(out io.Writer, name string) error {
+	buf := bbpool.Get()
+	defer bbpool.Release(buf)
+
+	fmt.Fprintf(buf, "func %s(buf io.Writer, t time.Time) error {", name)
+	for _, w := range f.compiled {
+		switch w.(type) {
+		case *verbatimw:
+			fmt.Fprintf(buf, "\nif _, err := io.WriteString(buf, %s); err != nil {", strconv.Quote(w.(*verbatimw).str()))
+			fmt.Fprintf(buf, "\nreturn err")
+			fmt.Fprintf(buf, "\n}")
+		case *timefmtw:
+			fmt.Fprintf(buf, "\nif _, err := io.WriteString(buf, t.Format(%s)); err != nil {", strconv.Quote(w.(*timefmtw).str()))
+			fmt.Fprintf(buf, "\nreturn err")
+			fmt.Fprintf(buf, "\n}")
+		}
+	}
+	fmt.Fprintf(buf, "\nreturn nil")
+	fmt.Fprintf(buf, "\n}")
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return errors.Wrap(err, `failed to format generated code`)
+	}
+	if _, err := out.Write(formatted); err != nil {
+		return errors.Wrap(err, `failed to write generated code`)
+	}
+	return nil
 }
