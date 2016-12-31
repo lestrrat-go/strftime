@@ -2,6 +2,10 @@
 
 strftime for Go
 
+[![Build Status](https://travis-ci.org/lestrrat/go-strftime.png?branch=master)](https://travis-ci.org/lestrrat/go-strftime)
+
+[![GoDoc](https://godoc.org/github.com/lestrrat/go-strftime?status.svg)](https://godoc.org/github.com/lestrrat/go-strftime)
+
 # SYNOPSIS
 
 ```go
