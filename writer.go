@@ -34,3 +34,33 @@ func (v timefmtw) canCombine() bool {
 func (v timefmtw) combine(w combiner) writer {
 	return timefmt(v.s + w.str())
 }
+
+type verbatimw struct {
+	s string
+}
+
+func verbatim(s string) *verbatimw {
+	return &verbatimw{s: s}
+}
+
+func (v verbatimw) Write(w io.Writer, _ time.Time) error {
+	if _, err := io.WriteString(w, v.s); err != nil {
+		return errors.Wrap(err, `failed to write verbatim string`)
+	}
+	return nil
+}
+
+func (v verbatimw) canCombine() bool {
+	return canCombine(v.s)
+}
+
+func (v verbatimw) combine(w combiner) writer {
+	if _, ok := w.(*timefmtw); ok {
+		return timefmt(v.s + w.str())
+	}
+	return verbatim(v.s + w.str())
+}
+
+func (v verbatimw) str() string {
+	return v.s
+}

@@ -37,32 +37,6 @@ func canCombine(s string) bool {
 	return true
 }
 
-type verbatim struct {
-	s string
-}
-
-func (v verbatim) Write(w io.Writer, _ time.Time) error {
-	if _, err := io.WriteString(w, v.s); err != nil {
-		return errors.Wrap(err, `failed to write verbatim string`)
-	}
-	return nil
-}
-
-func (v verbatim) canCombine() bool {
-	return canCombine(v.s)
-}
-
-func (v verbatim) combine(w combiner) writer {
-	if _, ok := w.(*timefmtw); ok {
-		return timefmt(v.s + w.str())
-	}
-	return &verbatim{s: v.s + w.str()}
-}
-
-func (v verbatim) str() string {
-	return v.s
-}
-
 type combiner interface {
 	canCombine() bool
 	combine(combiner) writer
@@ -185,26 +159,26 @@ var directives = map[byte]writer{
 	'B': timefmt("January"),
 	'b': timefmt("Jan"),
 	'C': &century{},
-	'h': timefmt("Jan"), // same as 'b'
 	'c': timefmt("Mon Jan _2 15:04:05 2006"),
 	'D': timefmt("01/02/06"),
 	'd': timefmt("02"),
 	'e': timefmt("_2"),
 	'F': timefmt("2006-01-02"),
 	'H': timefmt("15"),
+	'h': timefmt("Jan"), // same as 'b'
 	'I': timefmt("3"),
 	'j': &dayofyear{},
 	'k': hourwblank(false),
 	'l': hourwblank(true),
 	'M': timefmt("04"),
 	'm': timefmt("01"),
-	'n': verbatim{s: "\n"},
+	'n': verbatim("\n"),
 	'p': timefmt("PM"),
 	'R': timefmt("15:04"),
 	'r': timefmt("3:04:05 PM"),
 	'S': timefmt("05"),
 	'T': timefmt("15:04:05"),
-	't': &verbatim{s: "\t"},
+	't': verbatim("\t"),
 	'U': weeknumberOffset(0), // week number of the year, Sunday first
 	'u': weekday(1),
 	'V': &weeknumber{},
@@ -217,6 +191,7 @@ var directives = map[byte]writer{
 	'y': timefmt("06"),       // year w/o century
 	'Z': timefmt("MST"),      // time zone name
 	'z': timefmt("-0700"),    // time zone ofset from UTC
+	'%': verbatim("%"),
 }
 
 func compile(wl *writerList, p string) error {
@@ -243,7 +218,7 @@ func compile(wl *writerList, p string) error {
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 || i == l-1 {
-			appendw(verbatim{s: p})
+			appendw(verbatim(p))
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -254,7 +229,7 @@ func compile(wl *writerList, p string) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			appendw(verbatim{s: p[:i]})
+			appendw(verbatim(p[:i]))
 			p = p[i:]
 		}
 
