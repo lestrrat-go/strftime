@@ -53,8 +53,8 @@ func (v verbatim) canCombine() bool {
 }
 
 func (v verbatim) combine(w combiner) writer {
-	if _, ok := w.(*timefmt); ok {
-		return &timefmt{s: v.s + w.str()}
+	if _, ok := w.(*timefmtw); ok {
+		return timefmt(v.s + w.str())
 	}
 	return &verbatim{s: v.s + w.str()}
 }
@@ -67,30 +67,6 @@ type combiner interface {
 	canCombine() bool
 	combine(combiner) writer
 	str() string
-}
-
-// does the time.Format thing
-type timefmt struct {
-	s string
-}
-
-func (v timefmt) Write(w io.Writer, t time.Time) error {
-	if _, err := io.WriteString(w, t.Format(v.s)); err != nil {
-		return errors.Wrap(err, `failed to write timefmt string`)
-	}
-	return nil
-}
-
-func (v timefmt) str() string {
-	return v.s
-}
-
-func (v timefmt) canCombine() bool {
-	return true
-}
-
-func (v timefmt) combine(w combiner) writer {
-	return &timefmt{s: v.s + w.str()}
 }
 
 type century struct{}
@@ -204,43 +180,43 @@ func (v hourwblank) Write(w io.Writer, t time.Time) error {
 }
 
 var directives = map[byte]writer{
-	'A': &timefmt{s: "Monday"},
-	'a': &timefmt{s: "Mon"},
-	'B': &timefmt{s: "January"},
-	'b': &timefmt{s: "Jan"},
+	'A': timefmt("Monday"),
+	'a': timefmt("Mon"),
+	'B': timefmt("January"),
+	'b': timefmt("Jan"),
 	'C': &century{},
-	'h': &timefmt{s: "Jan"}, // same as 'b'
-	'c': &timefmt{s: "Mon Jan _2 15:04:05 2006"},
-	'D': &timefmt{s: "01/02/06"},
-	'd': &timefmt{s: "02"},
-	'e': &timefmt{s: "_2"},
-	'F': &timefmt{s: "2006-01-02"},
-	'H': &timefmt{s: "15"},
-	'I': &timefmt{s: "3"},
+	'h': timefmt("Jan"), // same as 'b'
+	'c': timefmt("Mon Jan _2 15:04:05 2006"),
+	'D': timefmt("01/02/06"),
+	'd': timefmt("02"),
+	'e': timefmt("_2"),
+	'F': timefmt("2006-01-02"),
+	'H': timefmt("15"),
+	'I': timefmt("3"),
 	'j': &dayofyear{},
 	'k': hourwblank(false),
 	'l': hourwblank(true),
-	'M': &timefmt{s: "04"},
-	'm': &timefmt{s: "01"},
+	'M': timefmt("04"),
+	'm': timefmt("01"),
 	'n': verbatim{s: "\n"},
-	'p': &timefmt{s: "PM"},
-	'R': &timefmt{s: "15:04"},
-	'r': &timefmt{s: "3:04:05 PM"},
-	'S': &timefmt{s: "05"},
-	'T': &timefmt{s: "15:04:05"},
+	'p': timefmt("PM"),
+	'R': timefmt("15:04"),
+	'r': timefmt("3:04:05 PM"),
+	'S': timefmt("05"),
+	'T': timefmt("15:04:05"),
 	't': &verbatim{s: "\t"},
 	'U': weeknumberOffset(0), // week number of the year, Sunday first
 	'u': weekday(1),
 	'V': &weeknumber{},
-	'v': &timefmt{s: "_2-Jan-2006"},
+	'v': timefmt("_2-Jan-2006"),
 	'W': weeknumberOffset(1), // week number of the year, Monday first
 	'w': weekday(0),
-	'X': &timefmt{s: "15:04:05"}, // national representation of the time XXX is this correct?
-	'x': &timefmt{s: "01/02/06"}, // national representation of the date XXX is this correct?
-	'Y': &timefmt{s: "2006"},     // year with century
-	'y': &timefmt{s: "06"},       // year w/o century
-	'Z': &timefmt{s: "MST"},      // time zone name
-	'z': &timefmt{s: "-0700"},    // time zone ofset from UTC
+	'X': timefmt("15:04:05"), // national representation of the time XXX is this correct?
+	'x': timefmt("01/02/06"), // national representation of the date XXX is this correct?
+	'Y': timefmt("2006"),     // year with century
+	'y': timefmt("06"),       // year w/o century
+	'Z': timefmt("MST"),      // time zone name
+	'z': timefmt("-0700"),    // time zone ofset from UTC
 }
 
 func compile(wl *writerList, p string) error {
