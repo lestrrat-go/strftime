@@ -49,31 +49,37 @@ var directives = map[byte]appender{
 	'%': verbatim("%"),
 }
 
-func compile(wl *appenderList, p string) error {
-	var prev appender
-	var prevCanCombine bool
-	var appendw = func(w appender) {
-		if prevCanCombine {
-			if wc, ok := w.(combiner); ok && wc.canCombine() {
-				prev = prev.(combiner).combine(wc)
-				(*wl)[len(*wl)-1] = prev
-				return
-			}
-		}
+type combiningAppend struct {
+	list appenderList
+	prev appender
+	prevCanCombine bool
+}
 
-		*wl = append(*wl, w)
-		prev = w
-		prevCanCombine = false
-		if comb, ok := w.(combiner); ok {
-			if comb.canCombine() {
-				prevCanCombine = true
-			}
+func (ca *combiningAppend) Append(w appender) {
+	if ca.prevCanCombine {
+		if wc, ok := w.(combiner); ok && wc.canCombine() {
+			ca.prev = ca.prev.(combiner).combine(wc)
+			ca.list[len(ca.list)-1] = ca.prev
+			return
 		}
 	}
+
+	ca.list = append(ca.list, w)
+	ca.prev = w
+	ca.prevCanCombine = false
+	if comb, ok := w.(combiner); ok {
+		if comb.canCombine() {
+			ca.prevCanCombine = true
+		}
+	}
+}
+
+func compile(wl *appenderList, p string) error {
+	var ca combiningAppend
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 || i == l-1 {
-			appendw(verbatim(p))
+			ca.Append(verbatim(p))
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -84,7 +90,7 @@ func compile(wl *appenderList, p string) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			appendw(verbatim(p[:i]))
+			ca.Append(verbatim(p[:i]))
 			p = p[i:]
 		}
 
@@ -92,9 +98,11 @@ func compile(wl *appenderList, p string) error {
 		if !ok {
 			return errors.Errorf(`unknown time format specification '%c'`, p[1])
 		}
-		appendw(directive)
+		ca.Append(directive)
 		p = p[2:]
 	}
+
+	*wl = ca.list
 
 	return nil
 }
