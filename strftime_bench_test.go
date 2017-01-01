@@ -21,7 +21,7 @@ func init() {
 	}()
 }
 
-const benchfmt = `%A %a %B %b %c %d %H %I %M %m %p %S %Y %y %Z`
+const benchfmt = `%A %a %B %b %d %H %I %M %m %p %S %Y %y %Z`
 
 func BenchmarkTebeka(b *testing.B) {
 	var t time.Time
