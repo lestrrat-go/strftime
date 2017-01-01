@@ -90,7 +90,7 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 
 # PERFORMANCE / OTHER LIBRARIES
 
-This library is much faster than `github.com/tebeka/strftime` *IF* you can reuse the format pattern. Furthermore, depending on your pattern, we may not be able to achieve much speed gain. Patches, tests welcome.
+This library is much faster than other libraries *IF* you can reuse the format pattern. However, depending on your pattern, we may not be able to achieve much speed gain. Patches, tests welcome.
 
 This benchmark only uses the subset of conversion specifications that are supported by *ALL* of the libraries compared.
 
