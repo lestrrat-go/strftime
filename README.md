@@ -94,9 +94,7 @@ This library is much faster than `github.com/tebeka/strftime` *IF* you can reuse
 
 This benchmark only uses the subset of conversion specifications that are supported by *ALL* of the libraries compared.
 
-Currently this library allocates the least (if pattern is reused), but can do better to catch up with other strftime implementations.
-
-Somethings to consider: 
+Somethings to consider when making comparisons :
 
 * Can it write to io.Writer?
 * Which `%specification` does it handle?
