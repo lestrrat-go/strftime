@@ -27,3 +27,85 @@ func TestFormat(t *testing.T) {
 		return
 	}
 }
+
+func TestFormatBlanks(t *testing.T) {
+	l := envload.New()
+	defer l.Restore()
+
+	os.Setenv("LC_ALL", "C")
+
+	{
+		dt := time.Date(1, 1, 1, 18, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%l", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, " 6", s, "leading blank is properly set") {
+			return
+		}
+	}
+	{
+		dt := time.Date(1, 1, 1, 6, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%k", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, " 6", s, "leading blank is properly set") {
+			return
+		}
+	}
+}
+
+func TestFormatZeropad(t *testing.T) {
+	l := envload.New()
+	defer l.Restore()
+
+	os.Setenv("LC_ALL", "C")
+
+	{
+		dt := time.Date(1, 1, 1, 1, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%j", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, "001", s, "padding is properly set") {
+			return
+		}
+	}
+	{
+		dt := time.Date(1, 1, 10, 6, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%j", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, "010", s, "padding is properly set") {
+			return
+		}
+	}
+	{
+		dt := time.Date(1, 6, 1, 6, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%j", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, "152", s, "padding is properly set") {
+			return
+		}
+	}
+	{
+		dt := time.Date(100, 1, 1, 1, 0, 0, 0, time.UTC)
+		s, err := strftime.Format("%C", dt)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+
+		if !assert.Equal(t, "01", s, "padding is properly set") {
+			return
+		}
+	}
+}
