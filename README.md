@@ -104,10 +104,10 @@ Somethings to consider:
 ```
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                 300000          5094 ns/op         480 B/op         23 allocs/op
-BenchmarkJehiah-4                1000000          1972 ns/op         256 B/op         17 allocs/op
-BenchmarkLestrrat-4               200000          7206 ns/op        2600 B/op         75 allocs/op
-BenchmarkLestrratCached-4         500000          2636 ns/op         176 B/op          2 allocs/op
+BenchmarkTebeka-4                 300000          4966 ns/op         288 B/op         21 allocs/op
+BenchmarkJehiah-4                 500000          2065 ns/op         256 B/op         17 allocs/op
+BenchmarkLestrrat-4               200000          6478 ns/op        1912 B/op         70 allocs/op
+BenchmarkLestrratCached-4        1000000          1852 ns/op         128 B/op          2 allocs/op
 PASS
-ok      github.com/lestrrat/go-strftime 18.188s
+ok      github.com/lestrrat/go-strftime 29.049s
 ```
