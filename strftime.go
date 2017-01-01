@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	bufferpool "github.com/lestrrat/go-bufferpool"
 	"github.com/pkg/errors"
 )
 
@@ -100,8 +99,6 @@ func compile(wl *appenderList, p string) error {
 	return nil
 }
 
-var bbpool = bufferpool.New()
-
 // Format takes the format `s` and the time `t` to produce the
 // format date/time. Note that this function re-compiles the
 // pattern every time it is called.
@@ -115,7 +112,7 @@ func Format(s string, t time.Time) (string, error) {
 		return "", err
 	}
 
-	return f.FormatString(t)
+	return f.FormatString(t), nil
 }
 
 // Strftime is the object that represents a compiled strftime pattern
@@ -145,8 +142,6 @@ func (f *Strftime) Pattern() string {
 // Format takes the destination `dst` and time `t`. It formats the date/time
 // using the pre-compiled pattern, and outputs the results to `dst`
 func (f *Strftime) Format(dst io.Writer, t time.Time) error {
-	wl := f.compiled
-
 	const bufSize = 64
 	var b []byte
 	max := len(f.pattern) + 10
@@ -156,23 +151,30 @@ func (f *Strftime) Format(dst io.Writer, t time.Time) error {
 	} else {
 		b = make([]byte, 0, max)
 	}
-	for _, w := range wl {
-		b = w.Append(b, t)
-	}
-	if _, err := dst.Write(b); err != nil {
+	if _, err := dst.Write(f.format(b, t)); err != nil {
 		return err
 	}
 	return nil
 }
 
+func (f *Strftime) format(b []byte, t time.Time) []byte {
+	for _, w := range f.compiled {
+		b = w.Append(b, t)
+	}
+	return b
+}
+
 // FormatString takes the time `t` and formats it, returning the
 // string containing the formated data.
-func (f *Strftime) FormatString(t time.Time) (string, error) {
-	buf := bbpool.Get()
-	defer bbpool.Release(buf)
-
-	if err := f.Format(buf, t); err != nil {
-		return "", err
+func (f *Strftime) FormatString(t time.Time) string {
+	const bufSize = 64
+	var b []byte
+	max := len(f.pattern) + 10
+	if max < bufSize {
+		var buf [bufSize]byte
+		b = buf[:0]
+	} else {
+		b = make([]byte, 0, max)
 	}
-	return buf.String(), nil
+	return string(f.format(b, t))
 }
