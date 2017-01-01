@@ -17,7 +17,11 @@ if err := f.Format(buf, time.Now()); err != nil {
 
 # DESCRIPTION
 
-VERY ALPHA CODE. More tests needed
+The goals for this library are
+
+* Optimized for the same pattern being called repeatedly
+* Be flexible about destination to write the results out
+* Be as complete as possible in terms of conversion specifications
 
 # API
 
