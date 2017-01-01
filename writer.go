@@ -1,19 +1,16 @@
 package strftime
 
 import (
-	"io"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
-type writer interface {
-	Write(io.Writer, time.Time) error
+type appender interface {
+	Append([]byte, time.Time) []byte
 }
 
-type writerList []writer
+type appenderList []appender
 
 // does the time.Format thing
 type timefmtw struct {
@@ -24,11 +21,8 @@ func timefmt(s string) *timefmtw {
 	return &timefmtw{s: s}
 }
 
-func (v timefmtw) Write(w io.Writer, t time.Time) error {
-	if _, err := io.WriteString(w, t.Format(v.s)); err != nil {
-		return errors.Wrap(err, `failed to write timefmtw string`)
-	}
-	return nil
+func (v timefmtw) Append(b []byte, t time.Time) []byte {
+	return t.AppendFormat(b, v.s)
 }
 
 func (v timefmtw) str() string {
@@ -39,7 +33,7 @@ func (v timefmtw) canCombine() bool {
 	return true
 }
 
-func (v timefmtw) combine(w combiner) writer {
+func (v timefmtw) combine(w combiner) appender {
 	return timefmt(v.s + w.str())
 }
 
@@ -51,18 +45,15 @@ func verbatim(s string) *verbatimw {
 	return &verbatimw{s: s}
 }
 
-func (v verbatimw) Write(w io.Writer, _ time.Time) error {
-	if _, err := io.WriteString(w, v.s); err != nil {
-		return errors.Wrap(err, `failed to write verbatim string`)
-	}
-	return nil
+func (v verbatimw) Append(b []byte, _ time.Time) []byte {
+	return append(b, v.s...)
 }
 
 func (v verbatimw) canCombine() bool {
 	return canCombine(v.s)
 }
 
-func (v verbatimw) combine(w combiner) writer {
+func (v verbatimw) combine(w combiner) appender {
 	if _, ok := w.(*timefmtw); ok {
 		return timefmt(v.s + w.str())
 	}
@@ -96,41 +87,33 @@ func canCombine(s string) bool {
 
 type combiner interface {
 	canCombine() bool
-	combine(combiner) writer
+	combine(combiner) appender
 	str() string
 }
 
 type century struct{}
 
-func (v century) Write(w io.Writer, t time.Time) error {
+func (v century) Append(b []byte, t time.Time) []byte {
 	n := t.Year() / 100
 	if n < 10 {
-		if _, err := io.WriteString(w, "0"); err != nil {
-			return errors.Wrap(err, `failed to write century`)
-		}
+		b = append(b, '0')
 	}
-	if _, err := io.WriteString(w, strconv.Itoa(n)); err != nil {
-		return errors.Wrap(err, `failed to write century`)
-	}
-	return nil
+	return append(b, strconv.Itoa(n)...)
 }
 
 type weekday int
 
-func (v weekday) Write(w io.Writer, t time.Time) error {
+func (v weekday) Append(b []byte, t time.Time) []byte {
 	n := int(t.Weekday())
 	if n < int(v) {
 		n += 7
 	}
-	if _, err := w.Write([]byte{byte(n + 48)}); err != nil {
-		return errors.Wrap(err, `failed to write weekday`)
-	}
-	return nil
+	return append(b, byte(n+48))
 }
 
 type weeknumberOffset int
 
-func (v weeknumberOffset) Write(w io.Writer, t time.Time) error {
+func (v weeknumberOffset) Append(b []byte, t time.Time) []byte {
 	yd := t.YearDay()
 	offset := int(t.Weekday()) - int(v)
 	if offset < 0 {
@@ -138,74 +121,47 @@ func (v weeknumberOffset) Write(w io.Writer, t time.Time) error {
 	}
 
 	if yd < offset {
-		if _, err := io.WriteString(w, "00"); err != nil {
-			return errors.Wrap(err, `failed to write week number (monday first)`)
-		}
+		return append(b, '0', '0')
 	}
 
 	n := ((yd - offset) / 7) + 1
-	s := strconv.Itoa(n)
 	if n < 10 {
-		if _, err := io.WriteString(w, "0"); err != nil {
-			return errors.Wrap(err, `failed to write week number`)
-		}
+		b = append(b, '0')
 	}
-
-	if _, err := io.WriteString(w, s); err != nil {
-		return errors.Wrap(err, `failed to write week number`)
-	}
-	return nil
+	return append(b, strconv.Itoa(n)...)
 }
 
 type weeknumber struct{}
 
-func (v weeknumber) Write(w io.Writer, t time.Time) error {
+func (v weeknumber) Append(b []byte, t time.Time) []byte {
 	_, n := t.ISOWeek()
-	s := strconv.Itoa(n)
 	if n < 10 {
-		if _, err := io.WriteString(w, "0"); err != nil {
-			return errors.Wrap(err, `failed to write week number`)
-		}
+		b = append(b, '0')
 	}
-	if _, err := io.WriteString(w, s); err != nil {
-		return errors.Wrap(err, `failed to write week number`)
-	}
-	return nil
+	return append(b, strconv.Itoa(n)...)
 }
 
 type dayofyear struct{}
 
-func (v dayofyear) Write(w io.Writer, t time.Time) error {
+func (v dayofyear) Append(b []byte, t time.Time) []byte {
 	n := t.YearDay()
 	if n < 10 {
-		if _, err := io.WriteString(w, "00"); err != nil {
-			return errors.Wrap(err, `failed to write week number`)
-		}
+		b = append(b, '0', '0')
 	} else if n < 100 {
-		if _, err := io.WriteString(w, "0"); err != nil {
-			return errors.Wrap(err, `failed to write week number`)
-		}
+		b = append(b, '0')
 	}
-	if _, err := io.WriteString(w, strconv.Itoa(n)); err != nil {
-		return errors.Wrap(err, `failed to write week number`)
-	}
-	return nil
+	return append(b, strconv.Itoa(n)...)
 }
 
 type hourwblank bool
 
-func (v hourwblank) Write(w io.Writer, t time.Time) error {
+func (v hourwblank) Append(b []byte, t time.Time) []byte {
 	h := t.Hour()
 	if bool(v) && h > 12 {
 		h = h - 12
 	}
 	if h < 10 {
-		if _, err := io.WriteString(w, " "); err != nil {
-			return errors.Wrap(err, `failed to write hour`)
-		}
+		b = append(b, ' ')
 	}
-	if _, err := io.WriteString(w, strconv.Itoa(h)); err != nil {
-		return errors.Wrap(err, `failed to write hour`)
-	}
-	return nil
+	return append(b, strconv.Itoa(h)...)
 }

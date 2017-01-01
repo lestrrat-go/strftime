@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var directives = map[byte]writer{
+var directives = map[byte]appender{
 	'A': timefmt("Monday"),
 	'a': timefmt("Mon"),
 	'B': timefmt("January"),
@@ -50,10 +50,10 @@ var directives = map[byte]writer{
 	'%': verbatim("%"),
 }
 
-func compile(wl *writerList, p string) error {
-	var prev writer
+func compile(wl *appenderList, p string) error {
+	var prev appender
 	var prevCanCombine bool
-	var appendw = func(w writer) {
+	var appendw = func(w appender) {
 		if prevCanCombine {
 			if wc, ok := w.(combiner); ok && wc.canCombine() {
 				prev = prev.(combiner).combine(wc)
@@ -121,13 +121,13 @@ func Format(s string, t time.Time) (string, error) {
 // Strftime is the object that represents a compiled strftime pattern
 type Strftime struct {
 	pattern  string
-	compiled writerList
+	compiled appenderList
 }
 
 // New creates a new Strftime object. If the compilation fails, then
 // an error is returned in the second argument.
 func New(f string) (*Strftime, error) {
-	var wl writerList
+	var wl appenderList
 	if err := compile(&wl, f); err != nil {
 		return nil, errors.Wrap(err, `failed to compile format`)
 	}
@@ -142,14 +142,25 @@ func (f *Strftime) Pattern() string {
 	return f.pattern
 }
 
-// Format takes the destination `buf` and time `t`. It formats the date/time
-// using the pre-compiled pattern, and outputs the results to `buf`
-func (f *Strftime) Format(buf io.Writer, t time.Time) error {
+// Format takes the destination `dst` and time `t`. It formats the date/time
+// using the pre-compiled pattern, and outputs the results to `dst`
+func (f *Strftime) Format(dst io.Writer, t time.Time) error {
 	wl := f.compiled
+
+	const bufSize = 64
+	var b []byte
+	max := len(f.pattern) + 10
+	if max < bufSize {
+		var buf [bufSize]byte
+		b = buf[:0]
+	} else {
+		b = make([]byte, 0, max)
+	}
 	for _, w := range wl {
-		if err := w.Write(buf, t); err != nil {
-			return errors.Wrap(err, `failed to format string`)
-		}
+		b = w.Append(b, t)
+	}
+	if _, err := dst.Write(b); err != nil {
+		return err
 	}
 	return nil
 }
