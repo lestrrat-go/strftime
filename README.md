@@ -110,13 +110,13 @@ This library is much faster than other libraries *IF* you can reuse the format p
 Here's the annotated list from the benchmark results. You can clearly see that (re)using a `Strftime` object
 and producing a string is the fastest.
 
-| Import Path                     | Commit                                  | Score   | Note                            |
-|:--------------------------------|:----------------------------------------|--------:|:--------------------------------|
-| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 3000000 | Using `FormatString()` (cached) |
-| github.com/jehiah/go-strftime   | [2efbe75](jehiah/go-strftime@2efbe75)   | 1000000 |                                 |
-| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 500000  | Using `Format()` (cached)       |
-| github.com/tebeka/strftime      | [3f9c776](tebeka/strftime@3f9c776)      | 300000  |                                 |
-| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 200000  | Using `Format()` (NOT cached)   |
+| Import Path                     | Score   | Note                            |
+|:--------------------------------|--------:|:--------------------------------|
+| github.com/lestrrat/go-strftime | 3000000 | Using `FormatString()` (cached) |
+| github.com/jehiah/go-strftime   | 1000000 |                                 |
+| github.com/lestrrat/go-strftime | 500000  | Using `Format()` (cached)       |
+| github.com/tebeka/strftime      | 300000  |                                 |
+| github.com/lestrrat/go-strftime | 200000  | Using `Format()` (NOT cached)   |
 
 However, depending on your pattern, this speed may vary. If you find a particular pattern that seems sluggish,
 please send in patches or tests.
