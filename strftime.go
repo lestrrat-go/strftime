@@ -78,12 +78,15 @@ func compile(wl *appenderList, p string) error {
 	var ca combiningAppend
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
-		if i < 0 || i == l-1 {
+		if i < 0 {
 			ca.Append(verbatim(p))
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
 			continue
+		}
+		if i == l-1 {
+			return errors.New(`stray % at the end of pattern`)
 		}
 
 		// we found a '%'. we need the next byte to decide what to do next
