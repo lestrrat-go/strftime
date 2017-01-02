@@ -90,22 +90,40 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 
 # PERFORMANCE / OTHER LIBRARIES
 
-This library is much faster than other libraries *IF* you can reuse the format pattern. However, depending on your pattern, we may not be able to achieve much speed gain. Patches, tests welcome.
+Raw output:
 
-This benchmark only uses the subset of conversion specifications that are supported by *ALL* of the libraries compared.
+```
+// On my OS X 10.11.6, 2.9 GHz Intel Core i5, 16GB memory.
+// go version devel +41908a5 Thu Dec 1 02:54:21 2016 +0000 darwin/amd64
+hummingbird% go test -tags bench -benchmem -bench .
+<snip>
+BenchmarkTebeka-4                     300000          4525 ns/op         288 B/op         21 allocs/op
+BenchmarkJehiah-4                    1000000          2076 ns/op         256 B/op         17 allocs/op
+BenchmarkLestrrat-4                   200000          6021 ns/op        1848 B/op         69 allocs/op
+BenchmarkLestrratCachedString-4      3000000           563 ns/op         128 B/op          2 allocs/op
+BenchmarkLestrratCachedWriter-4       500000          3059 ns/op         192 B/op          3 allocs/op
+PASS
+ok      github.com/lestrrat/go-strftime 21.255s
+```
 
-Somethings to consider when making comparisons :
+This library is much faster than other libraries *IF* you can reuse the format pattern.
+Here's the annotated list from the benchmark results. You can clearly see that (re)using a `Strftime` object
+and producing a string is the fastest.
+
+| Import Path                     | Commit                                  | Score   | Note                            |
+|:--------------------------------|:----------------------------------------|--------:|:--------------------------------|
+| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 3000000 | Using `FormatString()` (cached) |
+| github.com/jehiah/go-strftime   | [2efbe75](jehiah/go-strftime@2efbe75)   | 1000000 |                                 |
+| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 500000  | Using `Format()` (cached)       |
+| github.com/tebeka/strftime      | [3f9c776](tebeka/strftime@3f9c776)      | 300000  |                                 |
+| github.com/lestrrat/go-strftime | [ac30305](lestrrat/go-strftime@ac30305) | 200000  | Using `Format()` (NOT cached)   |
+
+However, depending on your pattern, this speed may vary. If you find a particular pattern that seems sluggish,
+please send in patches or tests.
+
+Please also note that this benchmark only uses the subset of conversion specifications that are supported by *ALL* of the libraries compared.
+
+Somethings to consider when making performance comparisons in the future:
 
 * Can it write to io.Writer?
 * Which `%specification` does it handle?
-
-```
-hummingbird% go test -tags bench -benchmem -bench .
-<snip>
-BenchmarkTebeka-4                 300000          4514 ns/op         288 B/op         21 allocs/op
-BenchmarkJehiah-4                1000000          1979 ns/op         256 B/op         17 allocs/op
-BenchmarkLestrrat-4               200000          6128 ns/op        1848 B/op         69 allocs/op
-BenchmarkLestrratCached-4        1000000          1743 ns/op          64 B/op          1 allocs/op
-PASS
-ok      github.com/lestrrat/go-strftime 30.393s
-```
