@@ -24,6 +24,22 @@ func TestExclusion(t *testing.T) {
 	}
 }
 
+func TestInvalid(t *testing.T) {
+	_, err := strftime.New("%")
+	if !assert.Error(t, err, `strftime.New should return error`) {
+		return
+	}
+
+	_, err = strftime.New(" %")
+	if !assert.Error(t, err, `strftime.New should return error`) {
+		return
+	}
+	_, err = strftime.New(" % ")
+	if !assert.Error(t, err, `strftime.New should return error`) {
+		return
+	}
+}
+
 func TestFormat(t *testing.T) {
 	l := envload.New()
 	defer l.Restore()
