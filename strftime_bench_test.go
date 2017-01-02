@@ -45,7 +45,16 @@ func BenchmarkLestrrat(b *testing.B) {
 	}
 }
 
-func BenchmarkLestrratCached(b *testing.B) {
+func BenchmarkLestrratCachedString(b *testing.B) {
+	var t time.Time
+	f, _ := lestrrat.New(benchfmt)
+	// This benchmark does not take into effect the compilation time
+	for i := 0; i < b.N; i++ {
+		f.FormatString(t)
+	}
+}
+
+func BenchmarkLestrratCachedWriter(b *testing.B) {
 	var t time.Time
 	f, _ := lestrrat.New(benchfmt)
 	var buf bytes.Buffer
@@ -58,5 +67,6 @@ func BenchmarkLestrratCached(b *testing.B) {
 		buf.Reset()
 		b.StartTimer()
 		f.Format(&buf, t)
+		f.FormatString(t)
 	}
 }
