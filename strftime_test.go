@@ -12,6 +12,18 @@ import (
 
 var ref = time.Unix(1136239445, 0).UTC()
 
+func TestExclusion(t *testing.T) {
+	s, err := strftime.New("%p PM")
+	if !assert.NoError(t, err, `strftime.New should succeed`) {
+		return
+	}
+
+	var tm time.Time
+	if !assert.Equal(t, "AM PM", s.FormatString(tm)) {
+		return
+	}
+}
+
 func TestFormat(t *testing.T) {
 	l := envload.New()
 	defer l.Restore()
