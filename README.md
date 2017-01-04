@@ -97,26 +97,28 @@ Raw output:
 // go version devel +41908a5 Thu Dec 1 02:54:21 2016 +0000 darwin/amd64
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                     300000          4525 ns/op         288 B/op         21 allocs/op
-BenchmarkJehiah-4                    1000000          2076 ns/op         256 B/op         17 allocs/op
-BenchmarkLestrrat-4                   200000          6021 ns/op        1848 B/op         69 allocs/op
-BenchmarkLestrratCachedString-4      3000000           563 ns/op         128 B/op          2 allocs/op
-BenchmarkLestrratCachedWriter-4       500000          3059 ns/op         192 B/op          3 allocs/op
+BenchmarkTebeka-4                     300000          4660 ns/op         288 B/op         21 allocs/op
+BenchmarkJehiah-4                    1000000          1976 ns/op         256 B/op         17 allocs/op
+BenchmarkLestrrat-4                  1000000          1573 ns/op         240 B/op          3 allocs/op
+BenchmarkLestrratCachedString-4      3000000           569 ns/op         128 B/op          2 allocs/op
+BenchmarkLestrratCachedWriter-4       500000          2572 ns/op         192 B/op          3 allocs/op
 PASS
-ok      github.com/lestrrat/go-strftime 21.255s
+ok      github.com/lestrrat/go-strftime 20.385s
 ```
 
 This library is much faster than other libraries *IF* you can reuse the format pattern.
 Here's the annotated list from the benchmark results. You can clearly see that (re)using a `Strftime` object
-and producing a string is the fastest.
+and producing a string is the fastest. Writing to an `io.Writer` seems a bit sluggish, but since
+the one producing the string is doing almost exactly the same thing, we believe this is purely the overhead of
+writing to an `io.Writer`
 
 | Import Path                     | Score   | Note                            |
 |:--------------------------------|--------:|:--------------------------------|
 | github.com/lestrrat/go-strftime | 3000000 | Using `FormatString()` (cached) |
+| github.com/lestrrat/go-strftime | 1000000 | Using `Format()` (NOT cached)   |
 | github.com/jehiah/go-strftime   | 1000000 |                                 |
 | github.com/lestrrat/go-strftime | 500000  | Using `Format()` (cached)       |
 | github.com/tebeka/strftime      | 300000  |                                 |
-| github.com/lestrrat/go-strftime | 200000  | Using `Format()` (NOT cached)   |
 
 However, depending on your pattern, this speed may vary. If you find a particular pattern that seems sluggish,
 please send in patches or tests.
