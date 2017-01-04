@@ -117,13 +117,41 @@ func compile(wl *appenderList, p string) error {
 // If you know beforehand that you will be reusing the pattern
 // within your application, consider creating a `Strftime` object
 // and reusing it.
-func Format(s string, t time.Time) (string, error) {
-	f, err := New(s)
-	if err != nil {
-		return "", err
+func Format(p string, t time.Time) (string, error) {
+	var dst []byte
+	// TODO: optimize for 64 byte strings
+	dst = make([]byte, 0, len(p)+10)
+	// Compile, but execute as we go
+	for l := len(p); l > 0; l = len(p) {
+		i := strings.IndexByte(p, '%')
+		if i < 0 {
+			dst = append(dst, p...)
+			// this is silly, but I don't trust break keywords when there's a
+			// possibility of this piece of code being rearranged
+			p = p[l:]
+			continue
+		}
+		if i == l-1 {
+			return "", errors.New(`stray % at the end of pattern`)
+		}
+
+		// we found a '%'. we need the next byte to decide what to do next
+		// we already know that i < l - 1
+		// everything up to the i is verbatim
+		if i > 0 {
+			dst = append(dst, p[:i]...)
+			p = p[i:]
+		}
+
+		directive, ok := directives[p[1]]
+		if !ok {
+			return "", errors.Errorf(`unknown time format specification '%c'`, p[1])
+		}
+		dst = directive.Append(dst, t)
+		p = p[2:]
 	}
 
-	return f.FormatString(t), nil
+	return string(dst), nil
 }
 
 // Strftime is the object that represents a compiled strftime pattern
