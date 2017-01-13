@@ -11,6 +11,7 @@ import (
 	"time"
 
 	jehiah "github.com/jehiah/go-strftime"
+	fastly "github.com/fastly/go-utils/strftime"
 	lestrrat "github.com/lestrrat/go-strftime"
 	tebeka "github.com/tebeka/strftime"
 )
@@ -35,6 +36,13 @@ func BenchmarkJehiah(b *testing.B) {
 	var t time.Time
 	for i := 0; i < b.N; i++ {
 		jehiah.Format(benchfmt, t)
+	}
+}
+
+func BenchmarkFastly(b *testing.B) {
+	var t time.Time
+	for i := 0; i < b.N; i++ {
+		fastly.Strftime(benchfmt, t)
 	}
 }
 
