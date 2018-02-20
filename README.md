@@ -1,4 +1,4 @@
-# go-strftime
+# strftime
 
 strftime for Go
 
