@@ -6,7 +6,7 @@ import (
 	"time"
 
 	envload "github.com/lestrrat/go-envload"
-	"github.com/lestrrat/go-strftime"
+	"github.com/lestrrat-go/strftime"
 	"github.com/stretchr/testify/assert"
 )
 

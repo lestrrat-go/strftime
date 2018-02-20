@@ -12,7 +12,7 @@ import (
 
 	jehiah "github.com/jehiah/go-strftime"
 	fastly "github.com/fastly/go-utils/strftime"
-	lestrrat "github.com/lestrrat/go-strftime"
+	lestrrat "github.com/lestrrat-go/strftime"
 	tebeka "github.com/tebeka/strftime"
 )
 
