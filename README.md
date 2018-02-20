@@ -1,6 +1,6 @@
 # strftime
 
-strftime for Go
+Fast strftime for Go
 
 [![Build Status](https://travis-ci.org/lestrrat-go/strftime.png?branch=master)](https://travis-ci.org/lestrrat-go/strftime)
 
