@@ -72,6 +72,7 @@ var combineExclusion = []string{
 	"January",
 	"MST",
 	"PM",
+	"pm",
 }
 
 func canCombine(s string) bool {
