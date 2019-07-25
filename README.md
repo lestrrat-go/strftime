@@ -108,6 +108,7 @@ ok  	github.com/lestrrat-go/strftime	25.433s
 ```
 
 ```
+// (NOTE: This benchmark is outdated, and needs to be ru-run)
 // On a host on Google Cloud Platform, machine-type: n1-standard-4 (vCPU x 4, memory: 15GB)
 // Linux <snip> 3.16.0-4-amd64 #1 SMP Debian 3.16.36-1+deb8u2 (2016-10-19) x86_64 GNU/Linux
 // go version go1.8rc1 linux/amd64
