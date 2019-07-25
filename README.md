@@ -93,18 +93,18 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 The following benchmarks were run separately because some libraries were using cgo on specific platforms (notabley, the fastly version)
 
 ```
-// On my OS X 10.11.6, 2.9 GHz Intel Core i5, 16GB memory.
-// go version go1.8rc1 darwin/amd64
+// On my OS X 10.14.5, 2.3 GHz Intel Core i5, 16GB memory.
+// go version go1.12.4rc1 darwin/amd64
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                     300000          4469 ns/op         288 B/op         21 allocs/op
-BenchmarkJehiah-4                    1000000          1931 ns/op         256 B/op         17 allocs/op
-BenchmarkFastly-4                    2000000           724 ns/op          80 B/op          5 allocs/op
-BenchmarkLestrrat-4                  1000000          1572 ns/op         240 B/op          3 allocs/op
-BenchmarkLestrratCachedString-4      3000000           548 ns/op         128 B/op          2 allocs/op
-BenchmarkLestrratCachedWriter-4       500000          2519 ns/op         192 B/op          3 allocs/op
+BenchmarkTebeka-4                 	  500000	      3894 ns/op	     323 B/op	      22 allocs/op
+BenchmarkJehiah-4                 	 1000000	      1503 ns/op	     256 B/op	      17 allocs/op
+BenchmarkFastly-4                 	 3000000	       549 ns/op	      80 B/op	       5 allocs/op
+BenchmarkLestrrat-4               	 2000000	       897 ns/op	     240 B/op	       3 allocs/op
+BenchmarkLestrratCachedString-4   	 3000000	       511 ns/op	     128 B/op	       2 allocs/op
+BenchmarkLestrratCachedWriter-4   	  500000	      2020 ns/op	     192 B/op	       3 allocs/op
 PASS
-ok      github.com/lestrrat-go/strftime 22.900s
+ok  	github.com/lestrrat-go/strftime	25.433s
 ```
 
 ```

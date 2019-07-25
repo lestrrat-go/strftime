@@ -8,45 +8,126 @@ import (
 	"github.com/pkg/errors"
 )
 
-var directives = map[byte]appender{
-	'A': timefmt("Monday"),
-	'a': timefmt("Mon"),
-	'B': timefmt("January"),
-	'b': timefmt("Jan"),
-	'C': &century{},
-	'c': timefmt("Mon Jan _2 15:04:05 2006"),
-	'D': timefmt("01/02/06"),
-	'd': timefmt("02"),
-	'e': timefmt("_2"),
-	'F': timefmt("2006-01-02"),
-	'H': timefmt("15"),
-	'h': timefmt("Jan"), // same as 'b'
-	'I': timefmt("3"),
-	'j': &dayofyear{},
-	'k': hourwblank(false),
-	'l': hourwblank(true),
-	'M': timefmt("04"),
-	'm': timefmt("01"),
-	'n': verbatim("\n"),
-	'p': timefmt("PM"),
-	'R': timefmt("15:04"),
-	'r': timefmt("3:04:05 PM"),
-	'S': timefmt("05"),
-	'T': timefmt("15:04:05"),
-	't': verbatim("\t"),
-	'U': weeknumberOffset(0), // week number of the year, Sunday first
-	'u': weekday(1),
-	'V': &weeknumber{},
-	'v': timefmt("_2-Jan-2006"),
-	'W': weeknumberOffset(1), // week number of the year, Monday first
-	'w': weekday(0),
-	'X': timefmt("15:04:05"), // national representation of the time XXX is this correct?
-	'x': timefmt("01/02/06"), // national representation of the date XXX is this correct?
-	'Y': timefmt("2006"),     // year with century
-	'y': timefmt("06"),       // year w/o century
-	'Z': timefmt("MST"),      // time zone name
-	'z': timefmt("-0700"),    // time zone ofset from UTC
-	'%': verbatim("%"),
+var (
+	fullWeekDayName             = timefmt("Monday")
+	abbrvWeekDayName            = timefmt("Mon")
+	fullMonthName               = timefmt("January")
+	abbrvMonthName              = timefmt("Jan")
+	centuryDecimal              = appenderFn(appendCentury)
+	timeAndDate                 = timefmt("Mon Jan _2 15:04:05 2006")
+	mdy                         = timefmt("01/02/06")
+	dayOfMonthZeroPad           = timefmt("02")
+	dayOfMonthSpacePad          = timefmt("_2")
+	ymd                         = timefmt("2006-01-02")
+	twentyFourHourClockZeroPad  = timefmt("15")
+	twelveHourClockZeroPad      = timefmt("3")
+	dayOfYear                   = appenderFn(appendDayOfYear)
+	twentyFourHourClockSpacePad = hourwblank(false)
+	twelveHourClockSpacePad     = hourwblank(true)
+	minutesZeroPad              = timefmt("04")
+	monthNumberZeroPad          = timefmt("01")
+	newline                     = verbatim("\n")
+	ampm                        = timefmt("PM")
+	hm                          = timefmt("15:04")
+	imsp                        = timefmt("3:04:05 PM")
+	secondsNumberZeroPad        = timefmt("05")
+	hms                         = timefmt("15:04:05")
+	tab                         = verbatim("\t")
+	weekNumberSundayOrigin      = weeknumberOffset(0) // week number of the year, Sunday first
+	weekdayMondayOrigin         = weekday(1)
+	// monday as the first day, and 01 as the first value
+	weekNumberMondayOriginOneOrigin = appenderFn(appendWeekNumber)
+	eby                             = timefmt("_2-Jan-2006")
+	// monday as the first day, and 00 as the first value
+	weekNumberMondayOrigin = weeknumberOffset(1) // week number of the year, Monday first
+	weekdaySundayOrigin    = weekday(0)
+	natReprTime            = timefmt("15:04:05") // national representation of the time XXX is this correct?
+	natReprDate            = timefmt("01/02/06") // national representation of the date XXX is this correct?
+	year                   = timefmt("2006")     // year with century
+	yearNoCentury          = timefmt("06")       // year w/o century
+	timezone               = timefmt("MST")      // time zone name
+	timezoneOffset         = timefmt("-0700")    // time zone ofset from UTC
+	percent                = verbatim("%")
+)
+
+func lookupDirective(key byte) (appender, bool) {
+	switch key {
+	case 'A':
+		return fullWeekDayName, true
+	case 'a':
+		return abbrvWeekDayName, true
+	case 'B':
+		return fullMonthName, true
+	case 'b', 'h':
+		return abbrvMonthName, true
+	case 'C':
+		return centuryDecimal, true
+	case 'c':
+		return timeAndDate, true
+	case 'D':
+		return mdy, true
+	case 'd':
+		return dayOfMonthZeroPad, true
+	case 'e':
+		return dayOfMonthSpacePad, true
+	case 'F':
+		return ymd, true
+	case 'H':
+		return twentyFourHourClockZeroPad, true
+	case 'I':
+		return twelveHourClockZeroPad, true
+	case 'j':
+		return dayOfYear, true
+	case 'k':
+		return twentyFourHourClockSpacePad, true
+	case 'l':
+		return twelveHourClockSpacePad, true
+	case 'M':
+		return minutesZeroPad, true
+	case 'm':
+		return monthNumberZeroPad, true
+	case 'n':
+		return newline, true
+	case 'p':
+		return ampm, true
+	case 'R':
+		return hm, true
+	case 'r':
+		return imsp, true
+	case 'S':
+		return secondsNumberZeroPad, true
+	case 'T':
+		return hms, true
+	case 't':
+		return tab, true
+	case 'U':
+		return weekNumberSundayOrigin, true
+	case 'u':
+		return weekdayMondayOrigin, true
+	case 'V':
+		return weekNumberMondayOriginOneOrigin, true
+	case 'v':
+		return eby, true
+	case 'W':
+		return weekNumberMondayOrigin, true
+	case 'w':
+		return weekdaySundayOrigin, true
+	case 'X':
+		return natReprTime, true
+	case 'x':
+		return natReprDate, true
+	case 'Y':
+		return year, true
+	case 'y':
+		return yearNoCentury, true
+	case 'Z':
+		return timezone, true
+	case 'z':
+		return timezoneOffset, true
+	case '%':
+		return percent, true
+	}
+	return nil, false
 }
 
 type combiningAppend struct {
@@ -97,7 +178,7 @@ func compile(wl *appenderList, p string) error {
 			p = p[i:]
 		}
 
-		directive, ok := directives[p[1]]
+		directive, ok := lookupDirective(p[1])
 		if !ok {
 			return errors.Errorf(`unknown time format specification '%c'`, p[1])
 		}
@@ -143,7 +224,7 @@ func Format(p string, t time.Time) (string, error) {
 			p = p[i:]
 		}
 
-		directive, ok := directives[p[1]]
+		directive, ok := lookupDirective(p[1])
 		if !ok {
 			return "", errors.Errorf(`unknown time format specification '%c'`, p[1])
 		}

@@ -10,6 +10,12 @@ type appender interface {
 	Append([]byte, time.Time) []byte
 }
 
+type appenderFn func([]byte, time.Time) []byte
+
+func (af appenderFn) Append(b []byte, t time.Time) []byte {
+	return af(b, t)
+}
+
 type appenderList []appender
 
 // does the time.Format thing
@@ -93,9 +99,7 @@ type combiner interface {
 	str() string
 }
 
-type century struct{}
-
-func (v century) Append(b []byte, t time.Time) []byte {
+func appendCentury(b []byte, t time.Time) []byte {
 	n := t.Year() / 100
 	if n < 10 {
 		b = append(b, '0')
@@ -133,9 +137,7 @@ func (v weeknumberOffset) Append(b []byte, t time.Time) []byte {
 	return append(b, strconv.Itoa(n)...)
 }
 
-type weeknumber struct{}
-
-func (v weeknumber) Append(b []byte, t time.Time) []byte {
+func appendWeekNumber(b []byte, t time.Time) []byte {
 	_, n := t.ISOWeek()
 	if n < 10 {
 		b = append(b, '0')
@@ -143,9 +145,7 @@ func (v weeknumber) Append(b []byte, t time.Time) []byte {
 	return append(b, strconv.Itoa(n)...)
 }
 
-type dayofyear struct{}
-
-func (v dayofyear) Append(b []byte, t time.Time) []byte {
+func appendDayOfYear(b []byte, t time.Time) []byte {
 	n := t.YearDay()
 	if n < 10 {
 		b = append(b, '0', '0')
