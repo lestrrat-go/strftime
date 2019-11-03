@@ -65,6 +65,7 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 | %j      | the day of the year as a decimal number (001-366) |
 | %k      | the hour (24-hour clock) as a decimal number (0-23); single digits are preceded by a blank |
 | %l      | the hour (12-hour clock) as a decimal number (1-12); single digits are preceded by a blank |
+| %L      | the millisecond as a decimal number (000-999) |
 | %M      | the minute as a decimal number (00-59) |
 | %m      | the month as a decimal number (01-12) |
 | %n      | a newline |
