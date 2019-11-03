@@ -107,6 +107,17 @@ func appendCentury(b []byte, t time.Time) []byte {
 	return append(b, strconv.Itoa(n)...)
 }
 
+func appendMillisecond(b []byte, t time.Time) []byte {
+	millisecond := int(t.Nanosecond()) / int(time.Millisecond)
+	if millisecond < 100 {
+		b = append(b, '0')
+	}
+	if millisecond < 10 {
+		b = append(b, '0')
+	}
+	return append(b, strconv.Itoa(millisecond)...)
+}
+
 type weekday int
 
 func (v weekday) Append(b []byte, t time.Time) []byte {

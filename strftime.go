@@ -24,6 +24,7 @@ var (
 	dayOfYear                   = appenderFn(appendDayOfYear)
 	twentyFourHourClockSpacePad = hourwblank(false)
 	twelveHourClockSpacePad     = hourwblank(true)
+	millisecond                 = appenderFn(appendMillisecond)
 	minutesZeroPad              = timefmt("04")
 	monthNumberZeroPad          = timefmt("01")
 	newline                     = verbatim("\n")
@@ -82,6 +83,8 @@ func lookupDirective(key byte) (appender, bool) {
 		return twentyFourHourClockSpacePad, true
 	case 'l':
 		return twelveHourClockSpacePad, true
+	case 'L':
+		return millisecond, true
 	case 'M':
 		return minutesZeroPad, true
 	case 'm':
