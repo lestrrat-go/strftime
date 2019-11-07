@@ -88,6 +88,51 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 | %z      | the time zone offset from UTC |
 | %%      | a '%' |
 
+# EXTENSIONS / CUSTOM SPECIFICATIONS
+
+This library in general tries to be POSIX compliant, but sometimes you just need that
+extra specification or two that is relatively widely used but is not included in the
+POSIX specification. For example, POSIX does not specify how to print out milliseconds,
+but popular implementations allow `%f` or `%L` to achieve this.
+
+For those instances, `strftime.Strftime` can be configured to use a custom set of
+specifications:
+
+```
+ds := strftime.NewSpecificationSet()
+ds.Set('L', ...) // provide implementation for `%L`
+
+// pass this new specification set to the strftime instance
+p, err := strftime.New(`%L`, strftime.WithSpecificationSet(ss))
+p.Format(..., time.Now())
+```
+
+The implementation must implement the `Appender` interface, which is
+
+```
+type Appender interface {
+  Append([]byte, time.Time) []byte
+}
+```
+
+For very commonly used extensions such as the millisecond example, we provide a default
+implementation so the user can do one of the following:
+
+```
+// (1) Pass a speficication byte and the Appender
+//     This allows you to pass arbitrary Appenders
+p, err := strftime.New(
+  `%L`,
+  strftime.WithSpecification('L', strftime.Milliseconds),
+)
+
+// (2) Pass an option that knows to use strftime.Milliseconds
+p, err := strftime.New(
+  `%L`,
+  strftime.WithMilliseconds('L'),
+)
+```
+
 # PERFORMANCE / OTHER LIBRARIES
 
 The following benchmarks were run separately because some libraries were using cgo on specific platforms (notabley, the fastly version)

@@ -96,7 +96,7 @@ func (ae *appenderExecutor) handle(a Appender) {
 	ae.dst = a.Append(ae.dst, ae.t)
 }
 
-func compile(handler compileHandler, p string, ds DirectiveSet) error {
+func compile(handler compileHandler, p string, ds SpecificationSet) error {
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
@@ -118,36 +118,36 @@ func compile(handler compileHandler, p string, ds DirectiveSet) error {
 			p = p[i:]
 		}
 
-		directive, err := ds.Lookup(p[1])
+		specification, err := ds.Lookup(p[1])
 		if err != nil {
 			return errors.Wrap(err, `pattern compilation failed`)
 		}
 
-		handler.handle(directive)
+		handler.handle(specification)
 		p = p[2:]
 	}
 	return nil
 }
 
-func getDirectiveSetFor(options ...Option) DirectiveSet {
-	var ds DirectiveSet = defaultDirectiveSet
-	var extraDirectives []*optDirectivePair
+func getSpecificationSetFor(options ...Option) SpecificationSet {
+	var ds SpecificationSet = defaultSpecificationSet
+	var extraSpecifications []*optSpecificationPair
 	for _, option := range options {
 		switch option.Name() {
-		case optDirectiveSet:
-			ds = option.Value().(DirectiveSet)
-		case optDirective:
-			extraDirectives = append(extraDirectives, option.Value().(*optDirectivePair))
+		case optSpecificationSet:
+			ds = option.Value().(SpecificationSet)
+		case optSpecification:
+			extraSpecifications = append(extraSpecifications, option.Value().(*optSpecificationPair))
 		}
 	}
 
-	if len(extraDirectives) > 0 {
+	if len(extraSpecifications) > 0 {
 		// If ds is immutable, we're going to need to create a new
 		// one. oh what a waste!
-		if _, ok := ds.(*immutableDirectiveSet); ok {
-			ds = NewDirectiveSet()
+		if raw, ok := ds.(*specificationSet); ok && !raw.mutable {
+			ds = NewSpecificationSet()
 		}
-		for _, v := range extraDirectives {
+		for _, v := range extraSpecifications {
 			ds.Set(v.name, v.appender)
 		}
 	}
@@ -163,7 +163,7 @@ func getDirectiveSetFor(options ...Option) DirectiveSet {
 // and reusing it.
 func Format(p string, t time.Time, options ...Option) (string, error) {
 	// TODO: this may be premature optimization
-	ds := getDirectiveSetFor(options...)
+	ds := getSpecificationSetFor(options...)
 
 	var h appenderExecutor
 	// TODO: optimize for 64 byte strings
@@ -186,7 +186,7 @@ type Strftime struct {
 // an error is returned in the second argument.
 func New(p string, options ...Option) (*Strftime, error) {
 	// TODO: this may be premature optimization
-	ds := getDirectiveSetFor(options...)
+	ds := getSpecificationSetFor(options...)
 
 	var h appenderListBuilder
 	h.list = &combiningAppend{}

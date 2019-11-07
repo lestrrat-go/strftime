@@ -13,49 +13,61 @@ type rwLocker interface {
 	sync.Locker
 }
 
-// DirectiveSet is a container for patterns that Strftime uses.
+// SpecificationSet is a container for patterns that Strftime uses.
 // If you want a custom strftime, you can copy the default
-// DirectiveSet and tweak it
-type DirectiveSet interface {
+// SpecificationSet and tweak it
+type SpecificationSet interface {
 	Lookup(byte) (Appender, error)
 	Delete(byte) error
 	Set(byte, Appender) error
 }
 
-type directiveSet struct {
-	lock  rwLocker
-	store map[byte]Appender
+type specificationSet struct {
+	mutable bool
+	lock      rwLocker
+	store     map[byte]Appender
 }
 
-type immutableDirectiveSet struct {
-	store map[byte]Appender
-}
-
-// The default directive set does not need any locking as it is never
+// The default specification set does not need any locking as it is never
 // accessed from the outside, and is never mutated.
-var defaultDirectiveSet *immutableDirectiveSet
+var defaultSpecificationSet SpecificationSet
 
 func init() {
-	tmp := NewDirectiveSet()
-	populateDefaultDirectives(tmp)
-	
-	defaultDirectiveSet = &immutableDirectiveSet{
-		store: tmp.(*directiveSet).store,
-	}
+	defaultSpecificationSet = newImmutableSpecificationSet()
 }
 
-// NewDirectiveSet creates a directive set with the default directives
-func NewDirectiveSet() DirectiveSet {
-	ds := &directiveSet{
-		lock:  &sync.RWMutex{},
-		store: make(map[byte]Appender),
+func newImmutableSpecificationSet() SpecificationSet {
+	// Create a mutable one so that populateDefaultSpecifications work through
+	// its magic, then copy the associated map
+	// (NOTE: this is done this way because there used to be
+	// two struct types for specification set, united under an interface.
+	// it can now be removed, but we would need to change the entire
+	// populateDefaultSpecifications method, and I'm currently too lazy
+	// PRs welcome)
+	tmp := NewSpecificationSet()
+
+	ss := &specificationSet{
+		mutable: false,
+		lock:      nil, // never used, so intentionally not initialized
+		store:     tmp.(*specificationSet).store,
 	}
-	populateDefaultDirectives(ds)
+
+	return ss
+}
+
+// NewSpecificationSet creates a specification set with the default specifications.
+func NewSpecificationSet() SpecificationSet {
+	ds := &specificationSet{
+		mutable: true,
+		lock:      &sync.RWMutex{},
+		store:     make(map[byte]Appender),
+	}
+	populateDefaultSpecifications(ds)
 
 	return ds
 }
 
-func populateDefaultDirectives(ds DirectiveSet) {
+func populateDefaultSpecifications(ds SpecificationSet) {
 	ds.Set('A', fullWeekDayName)
 	ds.Set('a', abbrvWeekDayName)
 	ds.Set('B', fullMonthName)
@@ -96,43 +108,36 @@ func populateDefaultDirectives(ds DirectiveSet) {
 	ds.Set('%', percent)
 }
 
-func (ds *immutableDirectiveSet) Lookup(b byte) (Appender, error) {
+func (ds *specificationSet) Lookup(b byte) (Appender, error) {
+	if ds.mutable {
+		ds.lock.RLock()
+		defer ds.lock.RLock()
+	}
 	v, ok := ds.store[b]
 	if !ok {
-		return nil, errors.Errorf(`lookup failed: pattern %%%c was not found in directive set`, b)
+		return nil, errors.Errorf(`lookup failed: '%%%c' was not found in specification set`, b)
 	}
 	return v, nil
 }
 
-func (ds *immutableDirectiveSet) Set(_ byte, _ Appender) error {
-	return errors.New(`set failed: directive set is immutable`)
-}
-
-func (ds *immutableDirectiveSet) Delete(_ byte) error {
-	return errors.New(`delete failed: directive set is immutable`)
-}
-
-func (ds *directiveSet) Lookup(b byte) (Appender, error) {
-	ds.lock.RLock()
-	defer ds.lock.RLock()
-	v, ok := ds.store[b]
-	if !ok {
-		return nil, errors.Errorf(`lookup failed: pattern %%%c was not found in directive set`, b)
+func (ds *specificationSet) Delete(b byte) error {
+	if !ds.mutable {
+		return errors.New(`delete failed: this specification set is marked immutable`)
 	}
-	return v, nil
-}
 
-func (ds *directiveSet) Delete(b byte) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 	delete(ds.store, b)
 	return nil
 }
 
-func (ds *directiveSet) Set(b byte, a Appender) error {
+func (ds *specificationSet) Set(b byte, a Appender) error {
+	if !ds.mutable {
+		return errors.New(`set failed: this specification set is marked immutable`)
+	}
+
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 	ds.store[b] = a
 	return nil
-
 }

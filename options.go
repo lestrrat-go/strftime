@@ -13,39 +13,39 @@ type option struct {
 func (o *option) Name() string       { return o.name }
 func (o *option) Value() interface{} { return o.value }
 
-const optDirectiveSet = `opt-directive-set`
+const optSpecificationSet = `opt-specification-set`
 
-// WithDirective allows you to specify a custom directive set
-func WithDirectiveSet(ds DirectiveSet) Option {
+// WithSpecification allows you to specify a custom specification set
+func WithSpecificationSet(ds SpecificationSet) Option {
 	return &option{
-		name:  optDirectiveSet,
+		name:  optSpecificationSet,
 		value: ds,
 	}
 }
 
-type optDirectivePair struct {
+type optSpecificationPair struct {
 	name     byte
 	appender Appender
 }
 
-const optDirective = `opt-directive`
+const optSpecification = `opt-specification`
 
-// WithDirective allows you to create a new directive set on the fly,
+// WithSpecification allows you to create a new specification set on the fly,
 // to be used only for that invocation.
-func WithDirective(b byte, a Appender) Option {
+func WithSpecification(b byte, a Appender) Option {
 	return &option{
-		name: optDirective,
-		value: &optDirectivePair{
+		name: optSpecification,
+		value: &optSpecificationPair{
 			name:     b,
 			appender: a,
 		},
 	}
 }
 
-// WithMilliseconds is similar to WithDirective, and specifies that
+// WithMilliseconds is similar to WithSpecification, and specifies that
 // the Strftime object should interpret the pattern `%b` (where b
 // is the byte that you specify as the argument)
 // as the zero-padded, 3 letter milliseconds of the time.
 func WithMilliseconds(b byte) Option {
-	return WithDirective(b, Milliseconds)
+	return WithSpecification(b, Milliseconds)
 }

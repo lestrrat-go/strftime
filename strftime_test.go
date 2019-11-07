@@ -152,12 +152,12 @@ func TestGHPR7(t *testing.T) {
 	const expected = `123`
 
 	p, _ := strftime.New(`%L`, strftime.WithMilliseconds('L'))
-	if !assert.Equal(t, expected, p.FormatString(ref), `patterns should match for custom directive`) {
+	if !assert.Equal(t, expected, p.FormatString(ref), `patterns should match for custom specification`) {
 		return
 	}
 }
 
-func Example_CustomDirectives() {
+func Example_CustomSpecifications() {
 	{
 		// I want %L as milliseconds!
 		p, err := strftime.New(`%L`, strftime.WithMilliseconds('L'))
@@ -186,7 +186,7 @@ func Example_CustomDirectives() {
 			return append(b, []byte(`Daisuke Maki`)...)
 		})
 
-		p, err := strftime.New(`%X`, strftime.WithDirective('X', a))
+		p, err := strftime.New(`%X`, strftime.WithSpecification('X', a))
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -196,14 +196,14 @@ func Example_CustomDirectives() {
 	}
 
 	{
-		// I want a completely new directive set, and I want %X to print out my name!
+		// I want a completely new specification set, and I want %X to print out my name!
 		a := strftime.AppendFunc(func(b []byte, _ time.Time) []byte {
 			return append(b, []byte(`Daisuke Maki`)...)
 		})
 
-		ds := strftime.NewDirectiveSet()
+		ds := strftime.NewSpecificationSet()
 		ds.Set('X', a)
-		p, err := strftime.New(`%X`, strftime.WithDirectiveSet(ds))
+		p, err := strftime.New(`%X`, strftime.WithSpecificationSet(ds))
 		if err != nil {
 			fmt.Println(err)
 			return
