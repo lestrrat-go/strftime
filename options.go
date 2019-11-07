@@ -47,5 +47,5 @@ func WithSpecification(b byte, a Appender) Option {
 // is the byte that you specify as the argument)
 // as the zero-padded, 3 letter milliseconds of the time.
 func WithMilliseconds(b byte) Option {
-	return WithSpecification(b, Milliseconds)
+	return WithSpecification(b, Milliseconds())
 }

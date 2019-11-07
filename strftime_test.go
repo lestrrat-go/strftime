@@ -182,10 +182,7 @@ func Example_CustomSpecifications() {
 
 	{
 		// I want %X to print out my name!
-		a := strftime.AppendFunc(func(b []byte, _ time.Time) []byte {
-			return append(b, []byte(`Daisuke Maki`)...)
-		})
-
+		a := strftime.Verbatim(`Daisuke Maki`)
 		p, err := strftime.New(`%X`, strftime.WithSpecification('X', a))
 		if err != nil {
 			fmt.Println(err)
@@ -197,9 +194,7 @@ func Example_CustomSpecifications() {
 
 	{
 		// I want a completely new specification set, and I want %X to print out my name!
-		a := strftime.AppendFunc(func(b []byte, _ time.Time) []byte {
-			return append(b, []byte(`Daisuke Maki`)...)
-		})
+		a := strftime.Verbatim(`Daisuke Maki`)
 
 		ds := strftime.NewSpecificationSet()
 		ds.Set('X', a)

@@ -9,45 +9,45 @@ import (
 )
 
 var (
-	fullWeekDayName             = timefmt("Monday")
-	abbrvWeekDayName            = timefmt("Mon")
-	fullMonthName               = timefmt("January")
-	abbrvMonthName              = timefmt("Jan")
+	fullWeekDayName             = StdlibFormat("Monday")
+	abbrvWeekDayName            = StdlibFormat("Mon")
+	fullMonthName               = StdlibFormat("January")
+	abbrvMonthName              = StdlibFormat("Jan")
 	centuryDecimal              = AppendFunc(appendCentury)
-	timeAndDate                 = timefmt("Mon Jan _2 15:04:05 2006")
-	mdy                         = timefmt("01/02/06")
-	dayOfMonthZeroPad           = timefmt("02")
-	dayOfMonthSpacePad          = timefmt("_2")
-	ymd                         = timefmt("2006-01-02")
-	twentyFourHourClockZeroPad  = timefmt("15")
-	twelveHourClockZeroPad      = timefmt("3")
+	timeAndDate                 = StdlibFormat("Mon Jan _2 15:04:05 2006")
+	mdy                         = StdlibFormat("01/02/06")
+	dayOfMonthZeroPad           = StdlibFormat("02")
+	dayOfMonthSpacePad          = StdlibFormat("_2")
+	ymd                         = StdlibFormat("2006-01-02")
+	twentyFourHourClockZeroPad  = StdlibFormat("15")
+	twelveHourClockZeroPad      = StdlibFormat("3")
 	dayOfYear                   = AppendFunc(appendDayOfYear)
 	twentyFourHourClockSpacePad = hourwblank(false)
 	twelveHourClockSpacePad     = hourwblank(true)
-	minutesZeroPad              = timefmt("04")
-	monthNumberZeroPad          = timefmt("01")
-	newline                     = verbatim("\n")
-	ampm                        = timefmt("PM")
-	hm                          = timefmt("15:04")
-	imsp                        = timefmt("3:04:05 PM")
-	secondsNumberZeroPad        = timefmt("05")
-	hms                         = timefmt("15:04:05")
-	tab                         = verbatim("\t")
+	minutesZeroPad              = StdlibFormat("04")
+	monthNumberZeroPad          = StdlibFormat("01")
+	newline                     = Verbatim("\n")
+	ampm                        = StdlibFormat("PM")
+	hm                          = StdlibFormat("15:04")
+	imsp                        = StdlibFormat("3:04:05 PM")
+	secondsNumberZeroPad        = StdlibFormat("05")
+	hms                         = StdlibFormat("15:04:05")
+	tab                         = Verbatim("\t")
 	weekNumberSundayOrigin      = weeknumberOffset(0) // week number of the year, Sunday first
 	weekdayMondayOrigin         = weekday(1)
 	// monday as the first day, and 01 as the first value
 	weekNumberMondayOriginOneOrigin = AppendFunc(appendWeekNumber)
-	eby                             = timefmt("_2-Jan-2006")
+	eby                             = StdlibFormat("_2-Jan-2006")
 	// monday as the first day, and 00 as the first value
 	weekNumberMondayOrigin = weeknumberOffset(1) // week number of the year, Monday first
 	weekdaySundayOrigin    = weekday(0)
-	natReprTime            = timefmt("15:04:05") // national representation of the time XXX is this correct?
-	natReprDate            = timefmt("01/02/06") // national representation of the date XXX is this correct?
-	year                   = timefmt("2006")     // year with century
-	yearNoCentury          = timefmt("06")       // year w/o century
-	timezone               = timefmt("MST")      // time zone name
-	timezoneOffset         = timefmt("-0700")    // time zone ofset from UTC
-	percent                = verbatim("%")
+	natReprTime            = StdlibFormat("15:04:05") // national representation of the time XXX is this correct?
+	natReprDate            = StdlibFormat("01/02/06") // national representation of the date XXX is this correct?
+	year                   = StdlibFormat("2006")     // year with century
+	yearNoCentury          = StdlibFormat("06")       // year w/o century
+	timezone               = StdlibFormat("MST")      // time zone name
+	timezoneOffset         = StdlibFormat("-0700")    // time zone ofset from UTC
+	percent                = Verbatim("%")
 )
 
 type combiningAppend struct {
@@ -100,7 +100,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
-			handler.handle(verbatim(p))
+			handler.handle(Verbatim(p))
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -114,7 +114,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			handler.handle(verbatim(p[:i]))
+			handler.handle(Verbatim(p[:i]))
 			p = p[i:]
 		}
 

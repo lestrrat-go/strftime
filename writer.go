@@ -6,10 +6,19 @@ import (
 	"time"
 )
 
+// Appender is the interface that must be fulfilled by components that
+// implement the translation of specifications to actual time value.
+//
+// The Append method takes the accumulated byte buffer, and the time to
+// use to generate the textual representation. The resulting byte
+// sequence must be returned by this method, normally by using the
+// append() builtin function.
 type Appender interface {
 	Append([]byte, time.Time) []byte
 }
 
+// AppendFunc is an utility type to allow users to create a 
+// function-only version of an Appender
 type AppendFunc func([]byte, time.Time) []byte
 
 func (af AppendFunc) Append(b []byte, t time.Time) []byte {
@@ -19,35 +28,47 @@ func (af AppendFunc) Append(b []byte, t time.Time) []byte {
 type appenderList []Appender
 
 // does the time.Format thing
-type timefmtw struct {
+type stdlibFormat struct {
 	s string
 }
 
-func timefmt(s string) *timefmtw {
-	return &timefmtw{s: s}
+// StdlibFormat returns an Appender that simply goes through `time.Format()`
+// For example, if you know you want to display the abbreviated month name for %b,
+// you can create a StdlibFormat with the pattern `Jan` and register that
+// for specification `b`:
+//
+// a  := StdlibFormat(`Jan`)
+// ss := NewSpecificationSet()
+// ss.Set('b', a) // does %b -> abbreviated month name
+func StdlibFormat(s string) Appender {
+	return &stdlibFormat{s: s}
 }
 
-func (v timefmtw) Append(b []byte, t time.Time) []byte {
+func (v stdlibFormat) Append(b []byte, t time.Time) []byte {
 	return t.AppendFormat(b, v.s)
 }
 
-func (v timefmtw) str() string {
+func (v stdlibFormat) str() string {
 	return v.s
 }
 
-func (v timefmtw) canCombine() bool {
+func (v stdlibFormat) canCombine() bool {
 	return true
 }
 
-func (v timefmtw) combine(w combiner) Appender {
-	return timefmt(v.s + w.str())
+func (v stdlibFormat) combine(w combiner) Appender {
+	return StdlibFormat(v.s + w.str())
 }
 
 type verbatimw struct {
 	s string
 }
 
-func verbatim(s string) *verbatimw {
+// Verbatim returns an Appender suitable for generating static text.
+// For static text, this method is slightly favorable than creating
+// your own appender, as adjacent verbatim blocks will be combined
+// at compile time to produce more efficient Appenders
+func Verbatim(s string) Appender {
 	return &verbatimw{s: s}
 }
 
@@ -60,10 +81,10 @@ func (v verbatimw) canCombine() bool {
 }
 
 func (v verbatimw) combine(w combiner) Appender {
-	if _, ok := w.(*timefmtw); ok {
-		return timefmt(v.s + w.str())
+	if _, ok := w.(*stdlibFormat); ok {
+		return StdlibFormat(v.s + w.str())
 	}
-	return verbatim(v.s + w.str())
+	return Verbatim(v.s + w.str())
 }
 
 func (v verbatimw) str() string {
