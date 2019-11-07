@@ -6,6 +6,50 @@ import (
 	"time"
 )
 
+// These are all of the standard, POSIX compliant specifications.
+// Extensions should be in extensions.go
+var (
+	fullWeekDayName             = StdlibFormat("Monday")
+	abbrvWeekDayName            = StdlibFormat("Mon")
+	fullMonthName               = StdlibFormat("January")
+	abbrvMonthName              = StdlibFormat("Jan")
+	centuryDecimal              = AppendFunc(appendCentury)
+	timeAndDate                 = StdlibFormat("Mon Jan _2 15:04:05 2006")
+	mdy                         = StdlibFormat("01/02/06")
+	dayOfMonthZeroPad           = StdlibFormat("02")
+	dayOfMonthSpacePad          = StdlibFormat("_2")
+	ymd                         = StdlibFormat("2006-01-02")
+	twentyFourHourClockZeroPad  = StdlibFormat("15")
+	twelveHourClockZeroPad      = StdlibFormat("3")
+	dayOfYear                   = AppendFunc(appendDayOfYear)
+	twentyFourHourClockSpacePad = hourwblank(false)
+	twelveHourClockSpacePad     = hourwblank(true)
+	minutesZeroPad              = StdlibFormat("04")
+	monthNumberZeroPad          = StdlibFormat("01")
+	newline                     = Verbatim("\n")
+	ampm                        = StdlibFormat("PM")
+	hm                          = StdlibFormat("15:04")
+	imsp                        = StdlibFormat("3:04:05 PM")
+	secondsNumberZeroPad        = StdlibFormat("05")
+	hms                         = StdlibFormat("15:04:05")
+	tab                         = Verbatim("\t")
+	weekNumberSundayOrigin      = weeknumberOffset(0) // week number of the year, Sunday first
+	weekdayMondayOrigin         = weekday(1)
+	// monday as the first day, and 01 as the first value
+	weekNumberMondayOriginOneOrigin = AppendFunc(appendWeekNumber)
+	eby                             = StdlibFormat("_2-Jan-2006")
+	// monday as the first day, and 00 as the first value
+	weekNumberMondayOrigin = weeknumberOffset(1) // week number of the year, Monday first
+	weekdaySundayOrigin    = weekday(0)
+	natReprTime            = StdlibFormat("15:04:05") // national representation of the time XXX is this correct?
+	natReprDate            = StdlibFormat("01/02/06") // national representation of the date XXX is this correct?
+	year                   = StdlibFormat("2006")     // year with century
+	yearNoCentury          = StdlibFormat("06")       // year w/o century
+	timezone               = StdlibFormat("MST")      // time zone name
+	timezoneOffset         = StdlibFormat("-0700")    // time zone ofset from UTC
+	percent                = Verbatim("%")
+)
+
 // Appender is the interface that must be fulfilled by components that
 // implement the translation of specifications to actual time value.
 //
@@ -118,6 +162,33 @@ type combiner interface {
 	canCombine() bool
 	combine(combiner) Appender
 	str() string
+}
+
+// this is container for the compiler to keep track of appenders,
+// and combine them as we parse and compile the pattern
+type combiningAppend struct {
+	list           appenderList
+	prev           Appender
+	prevCanCombine bool
+}
+
+func (ca *combiningAppend) Append(w Appender) {
+	if ca.prevCanCombine {
+		if wc, ok := w.(combiner); ok && wc.canCombine() {
+			ca.prev = ca.prev.(combiner).combine(wc)
+			ca.list[len(ca.list)-1] = ca.prev
+			return
+		}
+	}
+
+	ca.list = append(ca.list, w)
+	ca.prev = w
+	ca.prevCanCombine = false
+	if comb, ok := w.(combiner); ok {
+		if comb.canCombine() {
+			ca.prevCanCombine = true
+		}
+	}
 }
 
 func appendCentury(b []byte, t time.Time) []byte {
