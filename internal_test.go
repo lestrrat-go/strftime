@@ -8,7 +8,11 @@ import (
 
 func TestCombine(t *testing.T) {
 	{
-		s, _ := New(`%A foo`)
+		s, err := New(`%A foo`)
+		if !assert.NoError(t, err, `New should succeed`) {
+			return
+		}
+
 		if !assert.Equal(t, 1, len(s.compiled), "there are 1 element") {
 			return
 		}

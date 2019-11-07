@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-type appender interface {
+type Appender interface {
 	Append([]byte, time.Time) []byte
 }
 
-type appenderFn func([]byte, time.Time) []byte
+type AppendFunc func([]byte, time.Time) []byte
 
-func (af appenderFn) Append(b []byte, t time.Time) []byte {
+func (af AppendFunc) Append(b []byte, t time.Time) []byte {
 	return af(b, t)
 }
 
-type appenderList []appender
+type appenderList []Appender
 
 // does the time.Format thing
 type timefmtw struct {
@@ -39,7 +39,7 @@ func (v timefmtw) canCombine() bool {
 	return true
 }
 
-func (v timefmtw) combine(w combiner) appender {
+func (v timefmtw) combine(w combiner) Appender {
 	return timefmt(v.s + w.str())
 }
 
@@ -59,7 +59,7 @@ func (v verbatimw) canCombine() bool {
 	return canCombine(v.s)
 }
 
-func (v verbatimw) combine(w combiner) appender {
+func (v verbatimw) combine(w combiner) Appender {
 	if _, ok := w.(*timefmtw); ok {
 		return timefmt(v.s + w.str())
 	}
@@ -95,7 +95,7 @@ func canCombine(s string) bool {
 
 type combiner interface {
 	canCombine() bool
-	combine(combiner) appender
+	combine(combiner) Appender
 	str() string
 }
 
