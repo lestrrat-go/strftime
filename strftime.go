@@ -3,11 +3,11 @@ package strftime
 import (
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 )
-
 
 type compileHandler interface {
 	handle(Appender)
@@ -33,10 +33,14 @@ func (ae *appenderExecutor) handle(a Appender) {
 }
 
 func compile(handler compileHandler, p string, ds SpecificationSet) error {
+	// This is a really tight loop, so we don't even calls to
+	// Verbatim() to cuase extra stuff
+	var verbatim verbatimw
 	for l := len(p); l > 0; l = len(p) {
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
-			handler.handle(Verbatim(p))
+			verbatim.s = p
+			handler.handle(&verbatim)
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -50,7 +54,8 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			handler.handle(Verbatim(p[:i]))
+			verbatim.s = p[:i]
+			handler.handle(&verbatim)
 			p = p[i:]
 		}
 
@@ -90,6 +95,24 @@ func getSpecificationSetFor(options ...Option) SpecificationSet {
 	return ds
 }
 
+var fmtAppendExecutorPool = sync.Pool{
+	New: func() interface{} {
+		var h appenderExecutor
+		h.dst = make([]byte, 0, 32)
+		return &h
+	},
+}
+
+func getFmtAppendExecutor() *appenderExecutor {
+	return fmtAppendExecutorPool.Get().(*appenderExecutor)
+}
+
+func releasdeFmtAppendExecutor(v *appenderExecutor) {
+	// TODO: should we discard the buffer if it's too long?
+	v.dst = v.dst[:0]
+	fmtAppendExecutorPool.Put(v)
+}
+
 // Format takes the format `s` and the time `t` to produce the
 // format date/time. Note that this function re-compiles the
 // pattern every time it is called.
@@ -100,12 +123,11 @@ func getSpecificationSetFor(options ...Option) SpecificationSet {
 func Format(p string, t time.Time, options ...Option) (string, error) {
 	// TODO: this may be premature optimization
 	ds := getSpecificationSetFor(options...)
+	h := getFmtAppendExecutor()
+	defer releasdeFmtAppendExecutor(h)
 
-	var h appenderExecutor
-	// TODO: optimize for 64 byte strings
-	h.dst = make([]byte, 0, len(p)+10)
 	h.t = t
-	if err := compile(&h, p, ds); err != nil {
+	if err := compile(h, p, ds); err != nil {
 		return "", errors.Wrap(err, `failed to compile format`)
 	}
 
