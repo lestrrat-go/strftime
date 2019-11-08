@@ -92,7 +92,9 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 
 This library in general tries to be POSIX compliant, but sometimes you just need that
 extra specification or two that is relatively widely used but is not included in the
-POSIX specification. For example, POSIX does not specify how to print out milliseconds,
+POSIX specification.
+
+For example, POSIX does not specify how to print out milliseconds,
 but popular implementations allow `%f` or `%L` to achieve this.
 
 For those instances, `strftime.Strftime` can be configured to use a custom set of
@@ -115,7 +117,7 @@ type Appender interface {
 }
 ```
 
-For very commonly used extensions such as the millisecond example, we provide a default
+For commonly used extensions such as the millisecond example, we provide a default
 implementation so the user can do one of the following:
 
 ```
@@ -132,6 +134,9 @@ p, err := strftime.New(
   strftime.WithMilliseconds('L'),
 )
 ```
+
+If a common specification is missing, please feel free to submit a PR
+(but please be sure to be able to defend how "common" it is)
 
 # PERFORMANCE / OTHER LIBRARIES
 
