@@ -1,6 +1,7 @@
 package strftime_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var ref = time.Unix(1136239445, 0).UTC()
+var ref = time.Unix(1136239445, 123456789).UTC()
 
 func TestExclusion(t *testing.T) {
 	s, err := strftime.New("%p PM")
@@ -145,4 +146,70 @@ func TestGHIssue5(t *testing.T) {
 	if !assert.Equal(t, expected, p.FormatString(dt), `patterns including 'pm' should be treated as verbatim formatter`) {
 		return
 	}
+}
+
+func TestGHPR7(t *testing.T) {
+	const expected = `123`
+
+	p, _ := strftime.New(`%L`, strftime.WithMilliseconds('L'))
+	if !assert.Equal(t, expected, p.FormatString(ref), `patterns should match for custom specification`) {
+		return
+	}
+}
+
+func Example_CustomSpecifications() {
+	{
+		// I want %L as milliseconds!
+		p, err := strftime.New(`%L`, strftime.WithMilliseconds('L'))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		p.Format(os.Stdout, ref)
+		os.Stdout.Write([]byte{'\n'})
+	}
+
+	{
+		// I want %f as milliseconds!
+		p, err := strftime.New(`%f`, strftime.WithMilliseconds('f'))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		p.Format(os.Stdout, ref)
+		os.Stdout.Write([]byte{'\n'})
+	}
+
+	{
+		// I want %X to print out my name!
+		a := strftime.Verbatim(`Daisuke Maki`)
+		p, err := strftime.New(`%X`, strftime.WithSpecification('X', a))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		p.Format(os.Stdout, ref)
+		os.Stdout.Write([]byte{'\n'})
+	}
+
+	{
+		// I want a completely new specification set, and I want %X to print out my name!
+		a := strftime.Verbatim(`Daisuke Maki`)
+
+		ds := strftime.NewSpecificationSet()
+		ds.Set('X', a)
+		p, err := strftime.New(`%X`, strftime.WithSpecificationSet(ds))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		p.Format(os.Stdout, ref)
+		os.Stdout.Write([]byte{'\n'})
+	}
+
+	// OUTPUT:
+	// 123
+	// 123
+	// Daisuke Maki
+	// Daisuke Maki
 }

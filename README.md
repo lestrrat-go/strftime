@@ -88,40 +88,90 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 | %z      | the time zone offset from UTC |
 | %%      | a '%' |
 
+# EXTENSIONS / CUSTOM SPECIFICATIONS
+
+This library in general tries to be POSIX compliant, but sometimes you just need that
+extra specification or two that is relatively widely used but is not included in the
+POSIX specification.
+
+For example, POSIX does not specify how to print out milliseconds,
+but popular implementations allow `%f` or `%L` to achieve this.
+
+For those instances, `strftime.Strftime` can be configured to use a custom set of
+specifications:
+
+```
+ss := strftime.NewSpecificationSet()
+ss.Set('L', ...) // provide implementation for `%L`
+
+// pass this new specification set to the strftime instance
+p, err := strftime.New(`%L`, strftime.WithSpecificationSet(ss))
+p.Format(..., time.Now())
+```
+
+The implementation must implement the `Appender` interface, which is
+
+```
+type Appender interface {
+  Append([]byte, time.Time) []byte
+}
+```
+
+For commonly used extensions such as the millisecond example, we provide a default
+implementation so the user can do one of the following:
+
+```
+// (1) Pass a speficication byte and the Appender
+//     This allows you to pass arbitrary Appenders
+p, err := strftime.New(
+  `%L`,
+  strftime.WithSpecification('L', strftime.Milliseconds),
+)
+
+// (2) Pass an option that knows to use strftime.Milliseconds
+p, err := strftime.New(
+  `%L`,
+  strftime.WithMilliseconds('L'),
+)
+```
+
+If a common specification is missing, please feel free to submit a PR
+(but please be sure to be able to defend how "common" it is)
+
 # PERFORMANCE / OTHER LIBRARIES
 
 The following benchmarks were run separately because some libraries were using cgo on specific platforms (notabley, the fastly version)
 
 ```
-// On my OS X 10.14.5, 2.3 GHz Intel Core i5, 16GB memory.
-// go version go1.12.4rc1 darwin/amd64
+// On my OS X 10.14.6, 2.3 GHz Intel Core i5, 16GB memory.
+// go version go1.13.4 darwin/amd64
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                 	  500000	      3894 ns/op	     323 B/op	      22 allocs/op
-BenchmarkJehiah-4                 	 1000000	      1503 ns/op	     256 B/op	      17 allocs/op
-BenchmarkFastly-4                 	 3000000	       549 ns/op	      80 B/op	       5 allocs/op
-BenchmarkLestrrat-4               	 2000000	       897 ns/op	     240 B/op	       3 allocs/op
-BenchmarkLestrratCachedString-4   	 3000000	       511 ns/op	     128 B/op	       2 allocs/op
-BenchmarkLestrratCachedWriter-4   	  500000	      2020 ns/op	     192 B/op	       3 allocs/op
+BenchmarkTebeka-4                 	  297471	      3905 ns/op	     257 B/op	      20 allocs/op
+BenchmarkJehiah-4                 	  818444	      1773 ns/op	     256 B/op	      17 allocs/op
+BenchmarkFastly-4                 	 2330794	       550 ns/op	      80 B/op	       5 allocs/op
+BenchmarkLestrrat-4               	  916365	      1458 ns/op	      80 B/op	       2 allocs/op
+BenchmarkLestrratCachedString-4   	 2527428	       546 ns/op	     128 B/op	       2 allocs/op
+BenchmarkLestrratCachedWriter-4   	  537422	      2155 ns/op	     192 B/op	       3 allocs/op
 PASS
-ok  	github.com/lestrrat-go/strftime	25.433s
+ok  	github.com/lestrrat-go/strftime	25.618s
 ```
 
 ```
-// (NOTE: This benchmark is outdated, and needs to be ru-run)
-// On a host on Google Cloud Platform, machine-type: n1-standard-4 (vCPU x 4, memory: 15GB)
-// Linux <snip> 3.16.0-4-amd64 #1 SMP Debian 3.16.36-1+deb8u2 (2016-10-19) x86_64 GNU/Linux
-// go version go1.8rc1 linux/amd64
+// On a host on Google Cloud Platform, machine-type: f1-micro (vCPU x 1, memory: 0.6GB)
+// (Yes, I was being skimpy)
+// Linux <snip> 4.9.0-11-amd64 #1 SMP Debian 4.9.189-3+deb9u1 (2019-09-20) x86_64 GNU/Linux
+// go version go1.13.4 linux/amd64
 hummingbird% go test -tags bench -benchmem -bench .
 <snip>
-BenchmarkTebeka-4                     500000          3904 ns/op         288 B/op         21 allocs/op
-BenchmarkJehiah-4                    1000000          1665 ns/op         256 B/op         17 allocs/op
-BenchmarkFastly-4                    1000000          2134 ns/op         192 B/op         13 allocs/op
-BenchmarkLestrrat-4                  1000000          1327 ns/op         240 B/op          3 allocs/op
-BenchmarkLestrratCachedString-4      3000000           498 ns/op         128 B/op          2 allocs/op
-BenchmarkLestrratCachedWriter-4      1000000          3390 ns/op         192 B/op          3 allocs/op
+BenchmarkTebeka                   254997              4726 ns/op             256 B/op         20 allocs/op
+BenchmarkJehiah                   659289              1882 ns/op             256 B/op         17 allocs/op
+BenchmarkFastly                   389150              3044 ns/op             224 B/op         13 allocs/op
+BenchmarkLestrrat                 699069              1780 ns/op              80 B/op          2 allocs/op
+BenchmarkLestrratCachedString    2081594               589 ns/op             128 B/op          2 allocs/op
+BenchmarkLestrratCachedWriter     825763              1480 ns/op             192 B/op          3 allocs/op
 PASS
-ok      github.com/lestrrat-go/strftime 44.854s
+ok      github.com/lestrrat-go/strftime 11.355s
 ```
 
 This library is much faster than other libraries *IF* you can reuse the format pattern.
