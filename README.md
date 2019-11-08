@@ -101,8 +101,8 @@ For those instances, `strftime.Strftime` can be configured to use a custom set o
 specifications:
 
 ```
-ds := strftime.NewSpecificationSet()
-ds.Set('L', ...) // provide implementation for `%L`
+ss := strftime.NewSpecificationSet()
+ss.Set('L', ...) // provide implementation for `%L`
 
 // pass this new specification set to the strftime instance
 p, err := strftime.New(`%L`, strftime.WithSpecificationSet(ss))
