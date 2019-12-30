@@ -1,8 +1,10 @@
 package strftime_test
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -212,4 +214,16 @@ func Example_CustomSpecifications() {
 	// 123
 	// Daisuke Maki
 	// Daisuke Maki
+}
+
+func TestGHIssue9(t *testing.T) {
+	pattern, _ := strftime.New("/longer/path/to/see/where/this/leads//test99%Y%m%d.log")
+
+	var buf bytes.Buffer
+	pattern.Format(&buf, time.Now())
+
+	if !assert.True(t, strings.Contains(buf.String(), "/")) {
+		t.Logf("---> %s", buf.String())
+		return
+	}
 }

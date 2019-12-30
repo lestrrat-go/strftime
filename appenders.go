@@ -1,6 +1,9 @@
 package strftime
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -61,7 +64,7 @@ type Appender interface {
 	Append([]byte, time.Time) []byte
 }
 
-// AppendFunc is an utility type to allow users to create a 
+// AppendFunc is an utility type to allow users to create a
 // function-only version of an Appender
 type AppendFunc func([]byte, time.Time) []byte
 
@@ -70,6 +73,27 @@ func (af AppendFunc) Append(b []byte, t time.Time) []byte {
 }
 
 type appenderList []Appender
+
+type dumper interface {
+	dump(io.Writer)
+}
+
+func (l appenderList) dump(out io.Writer) {
+	var buf bytes.Buffer
+	ll := len(l)
+	for i, a := range l {
+		if dumper, ok := a.(dumper); ok {
+			dumper.dump(&buf)
+		} else {
+			fmt.Fprintf(&buf, "%#v", a)
+		}
+
+		if i < ll-1 {
+			fmt.Fprintf(&buf, ",\n")
+		}
+	}
+	buf.WriteTo(out)
+}
 
 // does the time.Format thing
 type stdlibFormat struct {
@@ -104,6 +128,10 @@ func (v stdlibFormat) combine(w combiner) Appender {
 	return StdlibFormat(v.s + w.str())
 }
 
+func (v stdlibFormat) dump(out io.Writer) {
+	fmt.Fprintf(out, "stdlib: %s", v.s)
+}
+
 type verbatimw struct {
 	s string
 }
@@ -133,6 +161,10 @@ func (v verbatimw) combine(w combiner) Appender {
 
 func (v verbatimw) str() string {
 	return v.s
+}
+
+func (v verbatimw) dump(out io.Writer) {
+	fmt.Fprintf(out, "verbatim: %s", v.s)
 }
 
 // These words below, as well as any decimal character

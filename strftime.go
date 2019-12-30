@@ -182,6 +182,13 @@ func (f *Strftime) Format(dst io.Writer, t time.Time) error {
 	return nil
 }
 
+// Dump outputs the internal structure of the formatter, for debugging purposes.
+// Please do NOT assume the output format to be fixed: it is expected to change
+// in the future.
+func (f *Strftime) Dump(out io.Writer) {
+	f.compiled.dump(out)
+}
+
 func (f *Strftime) format(b []byte, t time.Time) []byte {
 	for _, w := range f.compiled {
 		b = w.Append(b, t)
