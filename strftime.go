@@ -33,10 +33,11 @@ func (ae *appenderExecutor) handle(a Appender) {
 }
 
 func compile(handler compileHandler, p string, ds SpecificationSet) error {
-	// This is a really tight loop, so we don't even calls to
-	// Verbatim() to cuase extra stuff
-	var verbatim verbatimw
 	for l := len(p); l > 0; l = len(p) {
+		// This is a really tight loop, so we don't even calls to
+		// Verbatim() to cuase extra stuff
+		var verbatim verbatimw
+
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
 			verbatim.s = p
@@ -180,6 +181,13 @@ func (f *Strftime) Format(dst io.Writer, t time.Time) error {
 		return err
 	}
 	return nil
+}
+
+// Dump outputs the internal structure of the formatter, for debugging purposes.
+// Please do NOT assume the output format to be fixed: it is expected to change
+// in the future.
+func (f *Strftime) Dump(out io.Writer) {
+	f.compiled.dump(out)
 }
 
 func (f *Strftime) format(b []byte, t time.Time) []byte {
