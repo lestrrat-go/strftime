@@ -33,10 +33,11 @@ func (ae *appenderExecutor) handle(a Appender) {
 }
 
 func compile(handler compileHandler, p string, ds SpecificationSet) error {
-	// This is a really tight loop, so we don't even calls to
-	// Verbatim() to cuase extra stuff
-	var verbatim verbatimw
 	for l := len(p); l > 0; l = len(p) {
+		// This is a really tight loop, so we don't even calls to
+		// Verbatim() to cuase extra stuff
+		var verbatim verbatimw
+
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
 			verbatim.s = p
