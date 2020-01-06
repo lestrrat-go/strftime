@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -217,13 +216,16 @@ func Example_CustomSpecifications() {
 }
 
 func TestGHIssue9(t *testing.T) {
-	pattern, _ := strftime.New("/longer/path/to/see/where/this/leads//test99%Y%m%d.log")
+	pattern, _ := strftime.New("/full1/test2/to3/proveIssue9isfixed/11%C22/12345%Y%m%d.%H.log.%C.log")
+	testTime := time.Date(2020, 1, 1, 1, 1, 1, 1, time.UTC)
+	correctString := "/full1/test2/to3/proveIssue9isfixed/112022/1234520200101.01.log.20.log"
 
 	var buf bytes.Buffer
-	pattern.Format(&buf, time.Now())
+	pattern.Format(&buf, testTime)
 
-	if !assert.True(t, strings.Contains(buf.String(), "/")) {
-		t.Logf("---> %s", buf.String())
+	// Using a fixed time should give us a fixed output.
+	if !assert.True(t, buf.String() == correctString) {
+		t.Logf("Buffer [%s] should be [%s]", buf.String(), correctString)
 		return
 	}
 }
