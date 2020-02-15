@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	envload "github.com/lestrrat-go/envload"
 	"github.com/lestrrat-go/strftime"
+	"github.com/lestrrat-go/strftime/internal/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -227,5 +229,22 @@ func TestGHIssue9(t *testing.T) {
 	if !assert.True(t, buf.String() == correctString) {
 		t.Logf("Buffer [%s] should be [%s]", buf.String(), correctString)
 		return
+	}
+}
+
+func TestGHIssue12(t *testing.T) {
+	// use a set time instead of Now(), because the test result might fluctuate depending
+	// on when this test was run
+	base := 1581772114
+	for i := 0; i < 400; i++ {
+		now := int64(base + i*86400)
+		cWeek := util.GHIssue12GetWeek(now)
+
+		strfWeek, _ := strftime.Format("%Y%U", time.Unix(now, 0))
+		gWeek, _ := strconv.ParseInt(strfWeek, 10, 64)
+		if cWeek != int(gWeek) {
+			fmt.Println("failed!!!", time.Unix(now, 0).Format("2006.01.02 15:04:05"), cWeek, gWeek)
+			break
+		}
 	}
 }
