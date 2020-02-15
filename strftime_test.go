@@ -242,9 +242,8 @@ func TestGHIssue12(t *testing.T) {
 
 		strfWeek, _ := strftime.Format("%Y%U", time.Unix(now, 0))
 		gWeek, _ := strconv.ParseInt(strfWeek, 10, 64)
-		if cWeek != int(gWeek) {
-			fmt.Println("failed!!!", time.Unix(now, 0).Format("2006.01.02 15:04:05"), cWeek, gWeek)
-			break
+		if !assert.Equal(t, cWeek, int(gWeek), "week number should match") {
+			return
 		}
 	}
 }
