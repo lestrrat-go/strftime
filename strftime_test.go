@@ -158,6 +158,15 @@ func TestGHPR7(t *testing.T) {
 	}
 }
 
+func TestWithUnixSeconds(t *testing.T) {
+	const expected = `1136239445`
+
+	p, _ := strftime.New(`%s`, strftime.WithUnixSeconds('s'))
+	if !assert.Equal(t, expected, p.FormatString(ref), `patterns should match for custom specification`) {
+		return
+	}
+}
+
 func Example_CustomSpecifications() {
 	{
 		// I want %L as milliseconds!
@@ -208,11 +217,23 @@ func Example_CustomSpecifications() {
 		os.Stdout.Write([]byte{'\n'})
 	}
 
+	{
+		// I want %s as unix timestamp!
+		p, err := strftime.New(`%s`, strftime.WithUnixSeconds('s'))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		p.Format(os.Stdout, ref)
+		os.Stdout.Write([]byte{'\n'})
+	}
+
 	// OUTPUT:
 	// 123
 	// 123
 	// Daisuke Maki
 	// Daisuke Maki
+	// 1136239445
 }
 
 func TestGHIssue9(t *testing.T) {
