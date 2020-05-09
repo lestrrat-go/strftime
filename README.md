@@ -117,11 +117,11 @@ type Appender interface {
 }
 ```
 
-For commonly used extensions such as the millisecond example, we provide a default
+For commonly used extensions such as the millisecond example and Unix timestamp, we provide a default
 implementation so the user can do one of the following:
 
 ```
-// (1) Pass a speficication byte and the Appender
+// (1) Pass a specification byte and the Appender
 //     This allows you to pass arbitrary Appenders
 p, err := strftime.New(
   `%L`,
@@ -132,6 +132,22 @@ p, err := strftime.New(
 p, err := strftime.New(
   `%L`,
   strftime.WithMilliseconds('L'),
+)
+```
+
+Similarly for Unix Timestamp:
+```
+// (1) Pass a specification byte and the Appender
+//     This allows you to pass arbitrary Appenders
+p, err := strftime.New(
+  `%s`,
+  strftime.WithSpecification('s', strftime.UnixSeconds),
+)
+
+// (2) Pass an option that knows to use strftime.UnixSeconds
+p, err := strftime.New(
+  `%s`,
+  strftime.WithUnixSeconds('s'),
 )
 ```
 
