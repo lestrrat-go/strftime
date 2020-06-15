@@ -158,6 +158,15 @@ func TestGHPR7(t *testing.T) {
 	}
 }
 
+func TestWithMicroseconds(t *testing.T) {
+	const expected = `123456`
+
+	p, _ := strftime.New(`%f`, strftime.WithMicroseconds('f'))
+	if !assert.Equal(t, expected, p.FormatString(ref), `patterns should match for custom specification`) {
+		return
+	}
+}
+
 func TestWithUnixSeconds(t *testing.T) {
 	const expected = `1136239445`
 

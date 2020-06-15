@@ -50,6 +50,14 @@ func WithMilliseconds(b byte) Option {
 	return WithSpecification(b, Milliseconds())
 }
 
+// WithMicroseconds is similar to WithSpecification, and specifies that
+// the Strftime object should interpret the pattern `%b` (where b
+// is the byte that you specify as the argument)
+// as the zero-padded, 3 letter microseconds of the time.
+func WithMicroseconds(b byte) Option {
+	return WithSpecification(b, Microseconds())
+}
+
 // WithUnixSeconds is similar to WithSpecification, and specifies that
 // the Strftime object should interpret the pattern `%b` (where b
 // is the byte that you specify as the argument)
