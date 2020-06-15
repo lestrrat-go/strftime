@@ -154,6 +154,15 @@ p, err := strftime.New(
 If a common specification is missing, please feel free to submit a PR
 (but please be sure to be able to defend how "common" it is)
 
+## List of available extensions
+
+- [`Milliseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#Milliseconds) (related option: [`WithMilliseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithMilliseconds));
+
+- [`Microseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#Microseconds) (related option: [`WithMicroseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithMicroseconds));
+
+- [`UnixSeconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#UnixSeconds) (related option: [`WithUnixSeconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithUnixSeconds)).
+
+
 # PERFORMANCE / OTHER LIBRARIES
 
 The following benchmarks were run separately because some libraries were using cgo on specific platforms (notabley, the fastly version)
