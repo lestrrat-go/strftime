@@ -117,11 +117,11 @@ type Appender interface {
 }
 ```
 
-For commonly used extensions such as the millisecond example, we provide a default
+For commonly used extensions such as the millisecond example and Unix timestamp, we provide a default
 implementation so the user can do one of the following:
 
 ```
-// (1) Pass a speficication byte and the Appender
+// (1) Pass a specification byte and the Appender
 //     This allows you to pass arbitrary Appenders
 p, err := strftime.New(
   `%L`,
@@ -135,8 +135,33 @@ p, err := strftime.New(
 )
 ```
 
+Similarly for Unix Timestamp:
+```
+// (1) Pass a specification byte and the Appender
+//     This allows you to pass arbitrary Appenders
+p, err := strftime.New(
+  `%s`,
+  strftime.WithSpecification('s', strftime.UnixSeconds),
+)
+
+// (2) Pass an option that knows to use strftime.UnixSeconds
+p, err := strftime.New(
+  `%s`,
+  strftime.WithUnixSeconds('s'),
+)
+```
+
 If a common specification is missing, please feel free to submit a PR
 (but please be sure to be able to defend how "common" it is)
+
+## List of available extensions
+
+- [`Milliseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#Milliseconds) (related option: [`WithMilliseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithMilliseconds));
+
+- [`Microseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#Microseconds) (related option: [`WithMicroseconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithMicroseconds));
+
+- [`UnixSeconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#UnixSeconds) (related option: [`WithUnixSeconds`](https://pkg.go.dev/github.com/lestrrat-go/strftime?tab=doc#WithUnixSeconds)).
+
 
 # PERFORMANCE / OTHER LIBRARIES
 
