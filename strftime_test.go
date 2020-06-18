@@ -158,7 +158,7 @@ func TestGHPR7(t *testing.T) {
 	}
 }
 
-func Example_CustomSpecifications() {
+func ExampleSpecificationSet() {
 	{
 		// I want %L as milliseconds!
 		p, err := strftime.New(`%L`, strftime.WithMilliseconds('L'))

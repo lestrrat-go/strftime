@@ -92,7 +92,9 @@ func (l appenderList) dump(out io.Writer) {
 			fmt.Fprintf(&buf, ",\n")
 		}
 	}
-	buf.WriteTo(out)
+	if _, err := buf.WriteTo(out); err != nil {
+		panic(err)
+	}
 }
 
 // does the time.Format thing
