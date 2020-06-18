@@ -1,6 +1,7 @@
 package strftime
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -24,8 +25,8 @@ type SpecificationSet interface {
 
 type specificationSet struct {
 	mutable bool
-	lock      rwLocker
-	store     map[byte]Appender
+	lock    rwLocker
+	store   map[byte]Appender
 }
 
 // The default specification set does not need any locking as it is never
@@ -48,8 +49,8 @@ func newImmutableSpecificationSet() SpecificationSet {
 
 	ss := &specificationSet{
 		mutable: false,
-		lock:      nil, // never used, so intentionally not initialized
-		store:     tmp.(*specificationSet).store,
+		lock:    nil, // never used, so intentionally not initialized
+		store:   tmp.(*specificationSet).store,
 	}
 
 	return ss
@@ -59,53 +60,61 @@ func newImmutableSpecificationSet() SpecificationSet {
 func NewSpecificationSet() SpecificationSet {
 	ds := &specificationSet{
 		mutable: true,
-		lock:      &sync.RWMutex{},
-		store:     make(map[byte]Appender),
+		lock:    &sync.RWMutex{},
+		store:   make(map[byte]Appender),
 	}
 	populateDefaultSpecifications(ds)
 
 	return ds
 }
 
+var defaultSpecifications = map[byte]Appender{
+	'A': fullWeekDayName,
+	'a': abbrvWeekDayName,
+	'B': fullMonthName,
+	'b': abbrvMonthName,
+	'C': centuryDecimal,
+	'c': timeAndDate,
+	'D': mdy,
+	'd': dayOfMonthZeroPad,
+	'e': dayOfMonthSpacePad,
+	'F': ymd,
+	'H': twentyFourHourClockZeroPad,
+	'h': abbrvMonthName,
+	'I': twelveHourClockZeroPad,
+	'j': dayOfYear,
+	'k': twentyFourHourClockSpacePad,
+	'l': twelveHourClockSpacePad,
+	'M': minutesZeroPad,
+	'm': monthNumberZeroPad,
+	'n': newline,
+	'p': ampm,
+	'R': hm,
+	'r': imsp,
+	'S': secondsNumberZeroPad,
+	'T': hms,
+	't': tab,
+	'U': weekNumberSundayOrigin,
+	'u': weekdayMondayOrigin,
+	'V': weekNumberMondayOriginOneOrigin,
+	'v': eby,
+	'W': weekNumberMondayOrigin,
+	'w': weekdaySundayOrigin,
+	'X': natReprTime,
+	'x': natReprDate,
+	'Y': year,
+	'y': yearNoCentury,
+	'Z': timezone,
+	'z': timezoneOffset,
+	'%': percent,
+}
+
 func populateDefaultSpecifications(ds SpecificationSet) {
-	ds.Set('A', fullWeekDayName)
-	ds.Set('a', abbrvWeekDayName)
-	ds.Set('B', fullMonthName)
-	ds.Set('b', abbrvMonthName)
-	ds.Set('C', centuryDecimal)
-	ds.Set('c', timeAndDate)
-	ds.Set('D', mdy)
-	ds.Set('d', dayOfMonthZeroPad)
-	ds.Set('e', dayOfMonthSpacePad)
-	ds.Set('F', ymd)
-	ds.Set('H', twentyFourHourClockZeroPad)
-	ds.Set('h', abbrvMonthName)
-	ds.Set('I', twelveHourClockZeroPad)
-	ds.Set('j', dayOfYear)
-	ds.Set('k', twentyFourHourClockSpacePad)
-	ds.Set('l', twelveHourClockSpacePad)
-	ds.Set('M', minutesZeroPad)
-	ds.Set('m', monthNumberZeroPad)
-	ds.Set('n', newline)
-	ds.Set('p', ampm)
-	ds.Set('R', hm)
-	ds.Set('r', imsp)
-	ds.Set('S', secondsNumberZeroPad)
-	ds.Set('T', hms)
-	ds.Set('t', tab)
-	ds.Set('U', weekNumberSundayOrigin)
-	ds.Set('u', weekdayMondayOrigin)
-	ds.Set('V', weekNumberMondayOriginOneOrigin)
-	ds.Set('v', eby)
-	ds.Set('W', weekNumberMondayOrigin)
-	ds.Set('w', weekdaySundayOrigin)
-	ds.Set('X', natReprTime)
-	ds.Set('x', natReprDate)
-	ds.Set('Y', year)
-	ds.Set('y', yearNoCentury)
-	ds.Set('Z', timezone)
-	ds.Set('z', timezoneOffset)
-	ds.Set('%', percent)
+	for c, handler := range defaultSpecifications {
+		if err := ds.Set(c, handler); err != nil {
+			panic(fmt.Sprintf("failed to set default specification for %c: %s", c, err))
+		}
+	}
 }
 
 func (ds *specificationSet) Lookup(b byte) (Appender, error) {
