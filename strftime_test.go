@@ -259,3 +259,37 @@ func TestGHIssue9(t *testing.T) {
 		return
 	}
 }
+
+func TestGHIssue18(t *testing.T) {
+	testHour := func(twelveHour bool) func(t *testing.T) {
+		var patternString string
+		if twelveHour {
+			patternString = "%I"
+		} else {
+			patternString = "%H"
+		}
+		return func(t *testing.T) {
+			t.Helper()
+			var buf bytes.Buffer
+			pattern, _ := strftime.New(patternString)
+			for i := 0; i < 24; i++ {
+				testTime := time.Date(2020, 1, 1, i, 1, 1, 1, time.UTC)
+				var correctString string
+				if twelveHour && i > 12 {
+					correctString = fmt.Sprintf("%02d", i-12)
+				} else {
+					correctString = fmt.Sprintf("%02d", i)
+				}
+
+				buf.Reset()
+
+				pattern.Format(&buf, testTime)
+				if !assert.Equal(t, correctString, buf.String(), "Buffer [%s] should be [%s] for time %s", buf.String(), correctString, testTime) {
+					return
+				}
+			}
+		}
+	}
+	t.Run("12 hour zero pad", testHour(true))
+	t.Run("24 hour zero pad", testHour(false))
+}

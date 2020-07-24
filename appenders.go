@@ -22,11 +22,11 @@ var (
 	dayOfMonthZeroPad           = StdlibFormat("02")
 	dayOfMonthSpacePad          = StdlibFormat("_2")
 	ymd                         = StdlibFormat("2006-01-02")
-	twentyFourHourClockZeroPad  = StdlibFormat("15")
-	twelveHourClockZeroPad      = StdlibFormat("3")
+	twentyFourHourClockZeroPad  = &hourPadded{twelveHour: false, pad: '0'}
+	twelveHourClockZeroPad      = &hourPadded{twelveHour: true, pad: '0'}
 	dayOfYear                   = AppendFunc(appendDayOfYear)
-	twentyFourHourClockSpacePad = hourwblank(false)
-	twelveHourClockSpacePad     = hourwblank(true)
+	twentyFourHourClockSpacePad = &hourPadded{twelveHour: false, pad: ' '}
+	twelveHourClockSpacePad     = &hourPadded{twelveHour: true, pad: ' '}
 	minutesZeroPad              = StdlibFormat("04")
 	monthNumberZeroPad          = StdlibFormat("01")
 	newline                     = Verbatim("\n")
@@ -281,15 +281,27 @@ func appendDayOfYear(b []byte, t time.Time) []byte {
 	return append(b, strconv.Itoa(n)...)
 }
 
-type hourwblank bool
+type hourPadded struct {
+	pad        byte
+	twelveHour bool
+}
 
-func (v hourwblank) Append(b []byte, t time.Time) []byte {
+func (v hourPadded) Append(b []byte, t time.Time) []byte {
 	h := t.Hour()
-	if bool(v) && h > 12 {
+	if v.twelveHour && h > 12 {
 		h = h - 12
 	}
+
 	if h < 10 {
-		b = append(b, ' ')
+		b = append(b, v.pad)
+		b = append(b, byte(h+48))
+	} else {
+		if h >= 20 {
+			b = append(b, '2')
+		} else {
+			b = append(b, '1')
+		}
+		b = append(b, byte((h%10)+48))
 	}
-	return append(b, strconv.Itoa(h)...)
+	return b
 }
