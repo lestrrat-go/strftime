@@ -32,7 +32,7 @@ var (
 	newline                     = Verbatim("\n")
 	ampm                        = StdlibFormat("PM")
 	hm                          = StdlibFormat("15:04")
-	imsp                        = StdlibFormat("3:04:05 PM")
+	imsp                        = hmsWAMPM{}
 	secondsNumberZeroPad        = StdlibFormat("05")
 	hms                         = StdlibFormat("15:04:05")
 	tab                         = Verbatim("\t")
@@ -296,12 +296,48 @@ func (v hourPadded) Append(b []byte, t time.Time) []byte {
 		b = append(b, v.pad)
 		b = append(b, byte(h+48))
 	} else {
-		if h >= 20 {
-			b = append(b, '2')
-		} else {
-			b = append(b, '1')
-		}
-		b = append(b, byte((h%10)+48))
+		b = unrollTwoDigits(b, h)
 	}
 	return b
 }
+
+func unrollTwoDigits(b []byte, v int) []byte {
+	b = append(b, byte((v/10)+48))
+	b = append(b, byte((v%10)+48))
+	return b
+}
+
+type hmsWAMPM struct{}
+
+func (v hmsWAMPM) Append(b []byte, t time.Time) []byte {
+	h := t.Hour()
+	var am bool
+
+	if h == 0 {
+		b = append(b, '1')
+		b = append(b, '2')
+		am = true
+	} else {
+		if h >= 12 {
+			h = h -12
+		} else {
+			am = true
+		}
+		b = unrollTwoDigits(b, h)
+	}
+	b = append(b, ':')
+	b = unrollTwoDigits(b, t.Minute())
+	b = append(b, ':')
+	b = unrollTwoDigits(b, t.Second())
+
+	b = append(b, ' ')
+	if am {
+		b = append(b, 'A')
+	} else {
+		b = append(b, 'P')
+	}
+	b = append(b, 'M')
+
+	return b
+}
+

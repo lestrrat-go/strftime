@@ -261,7 +261,7 @@ func TestGHIssue9(t *testing.T) {
 }
 
 func TestGHIssue18(t *testing.T) {
-	testHour := func(twelveHour bool) func(t *testing.T) {
+	testIH := func(twelveHour bool) func(t *testing.T) {
 		var patternString string
 		if twelveHour {
 			patternString = "%I"
@@ -290,6 +290,32 @@ func TestGHIssue18(t *testing.T) {
 			}
 		}
 	}
-	t.Run("12 hour zero pad", testHour(true))
-	t.Run("24 hour zero pad", testHour(false))
+	testR := func(t *testing.T) {
+		t.Helper()
+		patternString := "%r"
+		var buf bytes.Buffer
+		pattern, _ := strftime.New(patternString)
+		for i := 0; i < 24; i++ {
+			testTime := time.Date(2020, 1, 1, i, 1, 1, 1, time.UTC)
+
+			var correctString string
+			if i == 0 {
+				correctString = fmt.Sprintf("%02d:%02d:%02d AM", 12, testTime.Minute(), testTime.Second())
+			} else if i >= 12 {
+				correctString = fmt.Sprintf("%02d:%02d:%02d PM", i-12, testTime.Minute(), testTime.Second())
+			} else {
+				correctString = fmt.Sprintf("%02d:%02d:%02d AM", i, testTime.Minute(), testTime.Second())
+			}
+
+			buf.Reset()
+
+			pattern.Format(&buf, testTime)
+			if !assert.Equal(t, correctString, buf.String(), "Buffer [%s] should be [%s] for time %s", buf.String(), correctString, testTime) {
+				continue
+			}
+		}
+	}
+	t.Run("12 hour zero pad %I", testIH(true))
+	t.Run("24 hour zero pad %H", testIH(false))
+	t.Run("12 hour zero pad %r", testR)
 }
