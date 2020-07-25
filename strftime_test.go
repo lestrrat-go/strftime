@@ -299,16 +299,20 @@ func TestGHIssue18(t *testing.T) {
 			testTime := time.Date(2020, 1, 1, i, 1, 1, 1, time.UTC)
 
 			var correctString string
-			if i == 0 {
+			switch {
+			case i == 0:
 				correctString = fmt.Sprintf("%02d:%02d:%02d AM", 12, testTime.Minute(), testTime.Second())
-			} else if i > 12 {
+			case i == 12:
+				correctString = fmt.Sprintf("%02d:%02d:%02d PM", 12, testTime.Minute(), testTime.Second())
+			case i > 12:
 				correctString = fmt.Sprintf("%02d:%02d:%02d PM", i-12, testTime.Minute(), testTime.Second())
-			} else {
+			default:
 				correctString = fmt.Sprintf("%02d:%02d:%02d AM", i, testTime.Minute(), testTime.Second())
 			}
 
 			buf.Reset()
 
+			t.Logf("%s", correctString)
 			pattern.Format(&buf, testTime)
 			if !assert.Equal(t, correctString, buf.String(), "Buffer [%s] should be [%s] for time %s", buf.String(), correctString, testTime) {
 				continue

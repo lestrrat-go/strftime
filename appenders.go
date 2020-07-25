@@ -318,9 +318,12 @@ func (v hmsWAMPM) Append(b []byte, t time.Time) []byte {
 		b = append(b, '2')
 		am = true
 	} else {
-		if h > 12 {
+		switch {
+		case h == 12:
+			// no op
+		case h > 12:
 			h = h -12
-		} else {
+		default:
 			am = true
 		}
 		b = unrollTwoDigits(b, h)
