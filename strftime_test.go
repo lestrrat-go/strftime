@@ -301,7 +301,7 @@ func TestGHIssue18(t *testing.T) {
 			var correctString string
 			if i == 0 {
 				correctString = fmt.Sprintf("%02d:%02d:%02d AM", 12, testTime.Minute(), testTime.Second())
-			} else if i >= 12 {
+			} else if i > 12 {
 				correctString = fmt.Sprintf("%02d:%02d:%02d PM", i-12, testTime.Minute(), testTime.Second())
 			} else {
 				correctString = fmt.Sprintf("%02d:%02d:%02d AM", i, testTime.Minute(), testTime.Second())

@@ -318,7 +318,7 @@ func (v hmsWAMPM) Append(b []byte, t time.Time) []byte {
 		b = append(b, '2')
 		am = true
 	} else {
-		if h >= 12 {
+		if h > 12 {
 			h = h -12
 		} else {
 			am = true
