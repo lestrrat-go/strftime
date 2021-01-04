@@ -1,6 +1,4 @@
-// +build bench
-
-package strftime_test
+package bench_test
 
 import (
 	"bytes"
