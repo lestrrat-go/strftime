@@ -275,9 +275,12 @@ func TestGHIssue18(t *testing.T) {
 			for i := 0; i < 24; i++ {
 				testTime := time.Date(2020, 1, 1, i, 1, 1, 1, time.UTC)
 				var correctString string
-				if twelveHour && i > 12 {
+				switch {
+				case twelveHour && i == 0:
+					correctString = fmt.Sprintf("%02d", 12)
+				case twelveHour && i > 12:
 					correctString = fmt.Sprintf("%02d", i-12)
-				} else {
+				default:
 					correctString = fmt.Sprintf("%02d", i)
 				}
 
@@ -322,4 +325,15 @@ func TestGHIssue18(t *testing.T) {
 	t.Run("12 hour zero pad %I", testIH(true))
 	t.Run("24 hour zero pad %H", testIH(false))
 	t.Run("12 hour zero pad %r", testR)
+}
+
+func TestFormat12AM(t *testing.T) {
+	s, err := strftime.Format(`%H %I %l`, time.Time{})
+	if !assert.NoError(t, err, `strftime.Format succeeds`) {
+		return
+	}
+
+	if !assert.Equal(t, "00 12 12", s, "correctly format the hour") {
+		return
+	}
 }
