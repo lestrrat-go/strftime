@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	jehiah "github.com/jehiah/go-strftime"
 	fastly "github.com/fastly/go-utils/strftime"
+	jehiah "github.com/jehiah/go-strftime"
 	lestrrat "github.com/lestrrat-go/strftime"
 	tebeka "github.com/tebeka/strftime"
 )
@@ -67,12 +67,19 @@ func BenchmarkLestrratCachedWriter(b *testing.B) {
 	b.ResetTimer()
 
 	// This benchmark does not take into effect the compilation time
-	// nor the buffer reset time
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
 		buf.Reset()
-		b.StartTimer()
 		f.Format(&buf, t)
-		f.FormatString(t)
+	}
+}
+
+func BenchmarkLestrratCachedFormatBuffer(b *testing.B) {
+	var t time.Time
+	f, _ := lestrrat.New(benchfmt)
+	b.ResetTimer()
+
+	var buf []byte
+	for i := 0; i < b.N; i++ {
+		buf = f.FormatBuffer(buf[:0], t)
 	}
 }
