@@ -42,20 +42,60 @@ func TestInvalid(t *testing.T) {
 	}
 }
 
-func TestFormat(t *testing.T) {
+func TestFormatMethods(t *testing.T) {
 	l := envload.New()
 	defer l.Restore()
 
 	os.Setenv("LC_ALL", "C")
 
-	s, err := strftime.Format(`%A %a %B %b %C %c %D %d %e %F %H %h %I %j %k %l %M %m %n %p %R %r %S %T %t %U %u %V %v %W %w %X %x %Y %y %Z %z`, ref)
+	formatString := `%A %a %B %b %C %c %D %d %e %F %H %h %I %j %k %l %M %m %n %p %R %r %S %T %t %U %u %V %v %W %w %X %x %Y %y %Z %z`
+	resultString := "Monday Mon January Jan 20 Mon Jan  2 22:04:05 2006 01/02/06 02  2 2006-01-02 22 Jan 10 002 22 10 04 01 \n PM 22:04 10:04:05 PM 05 22:04:05 \t 01 1 01  2-Jan-2006 01 1 22:04:05 01/02/06 2006 06 UTC +0000"
+
+	s, err := strftime.Format(formatString, ref)
 	if !assert.NoError(t, err, `strftime.Format succeeds`) {
 		return
 	}
 
-	if !assert.Equal(t, "Monday Mon January Jan 20 Mon Jan  2 22:04:05 2006 01/02/06 02  2 2006-01-02 22 Jan 10 002 22 10 04 01 \n PM 22:04 10:04:05 PM 05 22:04:05 \t 01 1 01  2-Jan-2006 01 1 22:04:05 01/02/06 2006 06 UTC +0000", s, `formatted result matches`) {
+	if !assert.Equal(t, resultString, s, `formatted result matches`) {
 		return
 	}
+
+	formatter, err := strftime.New(formatString)
+	if !assert.NoError(t, err, `strftime.New succeeds`) {
+		return
+	}
+
+	if !assert.Equal(t, resultString, formatter.FormatString(ref), `formatted result matches`) {
+		return
+	}
+
+	var buf bytes.Buffer
+	err = formatter.Format(&buf, ref)
+	if !assert.NoError(t, err, `Format method succeeds`) {
+		return
+	}
+	if !assert.Equal(t, resultString, buf.String(), `formatted result matches`) {
+		return
+	}
+
+	var dst []byte
+	dst = formatter.FormatBuffer(dst, ref)
+	if !assert.Equal(t, resultString, string(dst), `formatted result matches`) {
+		return
+	}
+
+	dst = []byte("nonsense")
+	dst = formatter.FormatBuffer(dst[:0], ref)
+	if !assert.Equal(t, resultString, string(dst), `overwritten result matches`) {
+		return
+	}
+
+	dst = []byte("nonsense")
+	dst = formatter.FormatBuffer(dst, ref)
+	if !assert.Equal(t, "nonsense"+resultString, string(dst), `appended result matches`) {
+		return
+	}
+
 }
 
 func TestFormatBlanks(t *testing.T) {
