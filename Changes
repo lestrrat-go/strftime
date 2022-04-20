@@ -1,7 +1,7 @@
 Changes
 =======
 
-v1.0.6 - UNRELEASED
+v1.0.6 - 20 Apr 2022
 [Miscellaneous]
   * Minimum go version is now go 1.13
   * github.com/pkg/errors is going to be phased out in steps. In this release,
