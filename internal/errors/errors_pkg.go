@@ -1,4 +1,5 @@
 //go:build !strftime_native_errors
+// +build !strftime_native_errors
 
 package errors
 
