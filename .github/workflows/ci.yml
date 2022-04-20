@@ -9,7 +9,7 @@ jobs:
         go: [ '1.18', '1.17', '1.16', '1.15', '1.14', '1.13' ]
         tags: [ 'strftime_native_errors', '' ]
       fail-fast: false
-    name: Go ${{ matrix.go }} test
+    name: Go ${{ matrix.go }} test (tags: ${{ matrix.tags }})
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
