@@ -3,6 +3,7 @@ Changes
 
 v1.0.6 - UNRELEASED
 [Miscellaneous]
+  * Minimum go version is now go 1.13
   * github.com/pkg/errors is going to be phased out in steps. In this release,
     users may opt-in to using native errors using `fmt.Errorf("%w")` by
     specifying the tag `strftime_native_errors`. In the next release, the default
