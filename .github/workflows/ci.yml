@@ -6,9 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.18', '1.17', '1.16', '1.15', '1.14', '1.13', '1.12' ]
+        go: [ '1.18', '1.17', '1.16', '1.15', '1.14', '1.13' ]
+        tags: [ 'strftime_native_errors', '' ]
       fail-fast: false
-    name: Go ${{ matrix.go }} test
+    name: "Go ${{ matrix.go }} test (tags: ${{ matrix.tags }})"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -17,7 +18,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Test with coverage
-        run: make cover
+        run: make STRFTIME_TAGS=${{ matrix.tags }} cover
       - name: Upload code coverage to codecov
         if: matrix.go == '1.18'
         uses: codecov/codecov-action@v1
