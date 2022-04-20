@@ -7,6 +7,7 @@ jobs:
     strategy:
       matrix:
         go: [ '1.18', '1.17', '1.16', '1.15', '1.14', '1.13', '1.12' ]
+      fail-fast: false
     name: Go ${{ matrix.go }} test
     steps:
       - name: Checkout repository
