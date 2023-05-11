@@ -11,6 +11,7 @@ import (
 	fastly "github.com/fastly/go-utils/strftime"
 	jehiah "github.com/jehiah/go-strftime"
 	lestrrat "github.com/lestrrat-go/strftime"
+	ncruces "github.com/ncruces/go-strftime"
 	tebeka "github.com/tebeka/strftime"
 )
 
@@ -41,6 +42,21 @@ func BenchmarkFastly(b *testing.B) {
 	var t time.Time
 	for i := 0; i < b.N; i++ {
 		fastly.Strftime(benchfmt, t)
+	}
+}
+
+func BenchmarkNcruces(b *testing.B) {
+	var t time.Time
+	for i := 0; i < b.N; i++ {
+		ncruces.Format(benchfmt, t)
+	}
+}
+
+func BenchmarkNcrucesAppend(b *testing.B) {
+	var d []byte
+	var t time.Time
+	for i := 0; i < b.N; i++ {
+		d = ncruces.AppendFormat(d[:0], benchfmt, t)
 	}
 }
 
