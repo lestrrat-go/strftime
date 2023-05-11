@@ -377,3 +377,27 @@ func TestFormat12AM(t *testing.T) {
 		return
 	}
 }
+
+func TestFormat_WeekNumber(t *testing.T) {
+	for y := 2000; y < 2020; y++ {
+		sunday := "00"
+		monday := "00"
+		for d := 1; d < 8; d++ {
+			base := time.Date(y, time.January, d, 0, 0, 0, 0, time.UTC)
+
+			switch base.Weekday() {
+			case time.Sunday:
+				sunday = "01"
+			case time.Monday:
+				monday = "01"
+			}
+
+			if got, _ := strftime.Format("%U", base); got != sunday {
+				t.Errorf("Format(%q, %d) = %q, want %q", "%U", base.Unix(), got, sunday)
+			}
+			if got, _ := strftime.Format("%W", base); got != monday {
+				t.Errorf("Format(%q, %d) = %q, want %q", "%W", base.Unix(), got, monday)
+			}
+		}
+	}
+}
