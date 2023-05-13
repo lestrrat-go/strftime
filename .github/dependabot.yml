@@ -14,5 +14,5 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    target-branch: "develop/v2"
+    target-branch: "master"
 
