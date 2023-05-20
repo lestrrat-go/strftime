@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.18', '1.17', '1.16', '1.15', '1.14', '1.13' ]
+        go: [ '1.20', '1.19', '1.18' ]
         tags: [ 'strftime_native_errors', '' ]
       fail-fast: false
     name: "Go ${{ matrix.go }} test (tags: ${{ matrix.tags }})"
@@ -20,7 +20,7 @@ jobs:
       - name: Test with coverage
         run: make STRFTIME_TAGS=${{ matrix.tags }} cover
       - name: Upload code coverage to codecov
-        if: matrix.go == '1.18'
+        if: matrix.go == '1.20'
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
