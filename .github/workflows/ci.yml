@@ -12,7 +12,7 @@ jobs:
     name: "Go ${{ matrix.go }} test (tags: ${{ matrix.tags }})"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Go stable version
         uses: actions/setup-go@v4
         with:
