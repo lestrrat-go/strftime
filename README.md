@@ -100,7 +100,7 @@ but popular implementations allow `%f` or `%L` to achieve this.
 For those instances, `strftime.Strftime` can be configured to use a custom set of
 specifications:
 
-```
+```go
 ss := strftime.NewSpecificationSet()
 ss.Set('L', ...) // provide implementation for `%L`
 
@@ -111,7 +111,7 @@ p.Format(..., time.Now())
 
 The implementation must implement the `Appender` interface, which is
 
-```
+```go
 type Appender interface {
   Append([]byte, time.Time) []byte
 }
@@ -120,7 +120,7 @@ type Appender interface {
 For commonly used extensions such as the millisecond example and Unix timestamp, we provide a default
 implementation so the user can do one of the following:
 
-```
+```go
 // (1) Pass a specification byte and the Appender
 //     This allows you to pass arbitrary Appenders
 p, err := strftime.New(
@@ -136,7 +136,7 @@ p, err := strftime.New(
 ```
 
 Similarly for Unix Timestamp:
-```
+```go
 // (1) Pass a specification byte and the Appender
 //     This allows you to pass arbitrary Appenders
 p, err := strftime.New(
