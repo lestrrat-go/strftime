@@ -6,21 +6,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.20', '1.19', '1.18' ]
+        go: [ '1.23', '1.22', '1.21' ]
         tags: [ 'strftime_native_errors', '' ]
       fail-fast: false
     name: "Go ${{ matrix.go }} test (tags: ${{ matrix.tags }})"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Install Go stable version
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: ${{ matrix.go }}
       - name: Test with coverage
         run: make STRFTIME_TAGS=${{ matrix.tags }} cover
       - name: Upload code coverage to codecov
-        if: matrix.go == '1.20'
-        uses: codecov/codecov-action@v3
+        if: matrix.go == '1.23'
+        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673  # v4.5.0
         with:
           file: ./coverage.out
