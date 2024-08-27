@@ -1,6 +1,6 @@
 module github.com/lestrrat-go/strftime
 
-go 1.19
+go 1.21
 
 require (
 	github.com/lestrrat-go/envload v0.0.0-20180220234015-a3eb8ddeffcc
