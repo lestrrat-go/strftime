@@ -61,6 +61,8 @@ func BenchmarkNcrucesAppend(b *testing.B) {
 }
 
 func BenchmarkLestrrat(b *testing.B) {
+	// This is expected to be rather slow, as it compiles the format string
+	// every time it's called.
 	var t time.Time
 	for i := 0; i < b.N; i++ {
 		lestrrat.Format(benchfmt, t)
