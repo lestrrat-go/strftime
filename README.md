@@ -2,7 +2,7 @@
 
 Fast strftime for Go
 
- ![](https://github.com/lestrrat-go/strftime/workflows/CI/badge.svg?branch=master)(https://github.com/lestrrat-go/strftime/actions?query=branch%3Amaster) [![Go Reference](https://pkg.go.dev/badge/github.com/lestrrat-go/strftime.svg)](https://pkg.go.dev/github.com/lestrrat-go/strftime)
+ [![](https://github.com/lestrrat-go/strftime/workflows/CI/badge.svg?branch=master)](https://github.com/lestrrat-go/strftime/actions?query=branch%3Amaster) [![Go Reference](https://pkg.go.dev/badge/github.com/lestrrat-go/strftime.svg)](https://pkg.go.dev/github.com/lestrrat-go/strftime)
 
 # SYNOPSIS
 
