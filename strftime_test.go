@@ -401,3 +401,198 @@ func TestFormat_WeekNumber(t *testing.T) {
 		}
 	}
 }
+
+
+func TestFormat_WeekYear(t *testing.T) {
+    // Note: According to ISO 8601, Week 1 is the week that contains the first Thursday of the year.
+    testCases := []struct {
+        name     string
+        date     time.Time
+        expectG  string // %G - ISO week year (4 digits)
+        expectg  string // %g - ISO week year without century (2 digits)
+    }{
+        {
+            name:     "New Year's Day 2005 (week belongs to 2004)",
+            date:     time.Date(2005, 1, 1, 0, 0, 0, 0, time.UTC), // Saturday
+            expectG:  "2004",
+            expectg:  "04",
+        },
+        {
+            name:     "New Year's Day 2006 (week belongs to 2005)", 
+            date:     time.Date(2006, 1, 1, 0, 0, 0, 0, time.UTC), // Sunday
+            expectG:  "2005",
+            expectg:  "05",
+        },
+        {
+            name:     "Dec 31, 2007 (week belongs to 2008)",
+            date:     time.Date(2007, 12, 31, 0, 0, 0, 0, time.UTC), // Monday
+            expectG:  "2008",
+            expectg:  "08",
+        },
+        {
+            name:     "Dec 30, 2008 (week belongs to 2009)",
+            date:     time.Date(2008, 12, 30, 0, 0, 0, 0, time.UTC), // Tuesday
+            expectG:  "2009",
+            expectg:  "09",
+        },
+        {
+            name:     "Jan 3, 2010 (first week of 2010)",
+            date:     time.Date(2010, 1, 3, 0, 0, 0, 0, time.UTC), // Sunday
+            expectG:  "2009",
+            expectg:  "09",
+        },
+        {
+            name:     "Jan 4, 2010 (first Monday, week 1 of 2010)",
+            date:     time.Date(2010, 1, 4, 0, 0, 0, 0, time.UTC), // Monday
+            expectG:  "2010",
+            expectg:  "10",
+        },
+        {
+            name:     "Regular date mid-year",
+            date:     time.Date(2023, 7, 15, 0, 0, 0, 0, time.UTC),
+            expectG:  "2023",
+            expectg:  "23",
+        },
+        {
+            name:     "Year 2000 (Y2K boundary)",
+            date:     time.Date(2000, 6, 15, 0, 0, 0, 0, time.UTC),
+            expectG:  "2000",
+            expectg:  "00",
+        },
+        {
+            name:     "Year 1999 to 2000 transition",
+            date:     time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC), // Saturday
+            expectG:  "1999",
+            expectg:  "99",
+        },
+        {
+            name:     "Single digit year case",
+            date:     time.Date(2009, 6, 15, 0, 0, 0, 0, time.UTC),
+            expectG:  "2009",
+            expectg:  "09",
+        },
+        {
+            name:     "Edge case: Dec 29, 2014 (week 1 of 2015)",
+            date:     time.Date(2014, 12, 29, 0, 0, 0, 0, time.UTC), // Monday
+            expectG:  "2015",
+            expectg:  "15",
+        },
+        {
+            name:     "Edge case: Jan 4, 2021 (first Monday of year)",
+            date:     time.Date(2021, 1, 4, 0, 0, 0, 0, time.UTC), // Monday  
+            expectG:  "2021",
+            expectg:  "21",
+        },
+        {
+            name:     "Edge case: Jan 3, 2021 (belongs to 2020)",
+            date:     time.Date(2021, 1, 3, 0, 0, 0, 0, time.UTC), // Sunday
+            expectG:  "2020",
+            expectg:  "20",
+        },
+        // Test cases for BCE years
+        {
+            name:     "Year 1 BCE mid-year",
+            date:     time.Date(-1, 6, 15, 0, 0, 0, 0, time.UTC),
+            expectG:  "-0001",
+            expectg:  "-01",
+        },
+        {
+            name:     "Year 10 BCE",
+            date:     time.Date(-1, 3, 20, 0, 0, 0, 0, time.UTC),
+            expectG:  "-0001",
+            expectg:  "-01",
+        },
+        {
+            name:     "Year 99 BCE",
+            date:     time.Date(-99, 8, 10, 0, 0, 0, 0, time.UTC),
+            expectG:  "-0099",
+            expectg:  "-99",
+        },
+        {
+            name:     "Year 100 BCE (century boundary)",
+            date:     time.Date(-100, 12, 25, 0, 0, 0, 0, time.UTC),
+            expectG:  "-0100",
+            expectg:  "-00",
+        },
+        {
+            name:     "Year 1234 BCE (4-digit BCE year)",
+            date:     time.Date(-1234, 9, 15, 0, 0, 0, 0, time.UTC),
+            expectG:  "-1234",
+            expectg:  "-34",
+        },
+    }
+
+    for _, tc := range testCases {
+        t.Run(tc.name, func(t *testing.T) {
+            // Test %G (4-digit ISO week year)
+            gotG, err := strftime.Format("%G", tc.date)
+            if !assert.NoError(t, err, "strftime.Format %%G should succeed") {
+                return
+            }
+            if !assert.Equal(t, tc.expectG, gotG, "%%G format for %v", tc.date) {
+                return
+            }
+
+            // Test %g (2-digit ISO week year)
+            gotg, err := strftime.Format("%g", tc.date)
+            if !assert.NoError(t, err, "strftime.Format %%g should succeed") {
+                return
+            }
+            if !assert.Equal(t, tc.expectg, gotg, "%%g format for %v", tc.date) {
+                return
+            }
+
+            // Verify consistency: last 2 digits of %G should equal %g
+            expectedLastG := tc.expectG[len(tc.expectG)-2:]
+            expectedLastg := tc.expectg[len(tc.expectg)-2:]
+            if !assert.Equal(t, expectedLastG, expectedLastg, "%%g should be last 2 digits of %%G for %v", tc.date) {
+                return
+            }
+        })
+    }
+}
+
+func TestFormat_WeekYearBoundaries(t *testing.T) {
+    // Test the tricky boundary cases where calendar year != ISO week year
+    boundaryTests := []struct {
+        calendarYear int
+        month        time.Month
+        day          int
+        expectedWeekYear int
+    }{
+        // Cases where early January belongs to previous week year
+        {2005, time.January, 1, 2004}, // Sat Jan 1, 2005 is in week 53 of 2004
+        {2005, time.January, 2, 2004}, // Sun Jan 2, 2005 is in week 53 of 2004
+        {2006, time.January, 1, 2005}, // Sun Jan 1, 2006 is in week 52 of 2005
+        
+        // Cases where late December belongs to next week year  
+        {2007, time.December, 31, 2008}, // Mon Dec 31, 2007 is in week 1 of 2008
+        {2008, time.December, 29, 2009}, // Mon Dec 29, 2008 is in week 1 of 2009
+        {2008, time.December, 30, 2009}, // Tue Dec 30, 2008 is in week 1 of 2009
+        {2008, time.December, 31, 2009}, // Wed Dec 31, 2008 is in week 1 of 2009
+    }
+
+    for _, bt := range boundaryTests {
+        testDate := time.Date(bt.calendarYear, bt.month, bt.day, 0, 0, 0, 0, time.UTC)
+        
+        gotG, err := strftime.Format("%G", testDate)
+        if !assert.NoError(t, err, "strftime.Format %%G should succeed") {
+            continue
+        }
+        
+        expectedG := fmt.Sprintf("%04d", bt.expectedWeekYear)
+        if !assert.Equal(t, expectedG, gotG, "Calendar %d-%02d-%02d should be week year %d", 
+            bt.calendarYear, bt.month, bt.day, bt.expectedWeekYear) {
+            continue
+        }
+        
+        // Test %g as well
+        gotg, err := strftime.Format("%g", testDate)
+        if !assert.NoError(t, err, "strftime.Format %%g should succeed") {
+            continue
+        }
+        
+        expectedg := fmt.Sprintf("%02d", bt.expectedWeekYear%100)
+        assert.Equal(t, expectedg, gotg, "Week year without century should match for %v", testDate)
+    }
+}
