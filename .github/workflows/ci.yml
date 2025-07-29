@@ -21,6 +21,6 @@ jobs:
         run: make STRFTIME_TAGS=${{ matrix.tags }} cover
       - name: Upload code coverage to codecov
         if: matrix.go == '1.23'
-        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303  # v5.1.2
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24  # v5.4.3
         with:
           file: ./coverage.out
