@@ -57,6 +57,8 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 | %d      | day of the month as a decimal number (01-31) |
 | %e      | the day of the month as a decimal number (1-31); single digits are preceded by a blank |
 | %F      | equivalent to %Y-%m-%d |
+| %G      | the ISO week year with century as a decimal number with 4 digits |
+| %g      | the ISO week year without century as a decimal number (00-99) with 2 digits |
 | %H      | the hour (24-hour clock) as a decimal number (00-23) |
 | %h      | same as %b |
 | %I      | the hour (12-hour clock) as a decimal number (01-12) |
