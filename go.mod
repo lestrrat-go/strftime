@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/lestrrat-go/envload v0.0.0-20180220234015-a3eb8ddeffcc
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
