@@ -121,7 +121,7 @@ func populateDefaultSpecifications(ds SpecificationSet) {
 func (ds *specificationSet) Lookup(b byte) (Appender, error) {
 	if ds.mutable {
 		ds.lock.RLock()
-		defer ds.lock.RLock()
+		defer ds.lock.RUnlock()
 	}
 	v, ok := ds.store[b]
 	if !ok {
