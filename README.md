@@ -91,20 +91,21 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 # LOCALIZATION
 
 By default the name-producing specifiers (`%A`, `%a`, `%B`, `%b`, `%h`, `%p`)
-emit English. To localize them, pass a `Locale` via `WithLocale`. The library
-ships no locale data of its own — you supply the names for your language:
+emit English. To localize them, build a `Locale` with `NewLocale` and pass it
+via `WithLocale`. The library ships no locale data of its own — you supply the
+names for your language:
 
 ```go
-french := strftime.Locale{
-  Months: strftime.MonthNames{
+french := strftime.NewLocale(
+  strftime.WithMonths(strftime.MonthNames{
     "janvier", "février", "mars", "avril", "mai", "juin",
     "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-  },
-  Weekdays: strftime.WeekdayNames{
+  }),
+  strftime.WithWeekdays(strftime.WeekdayNames{
     "dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi",
-  },
-  // ShortMonths, ShortWeekdays, AMPM ... optional
-}
+  }),
+  // WithShortMonths, WithShortWeekdays, WithMeridiem ... optional
+)
 
 s, _ := strftime.New(`%A %d %B %Y`, strftime.WithLocale(french))
 // -> "lundi 02 janvier 2006"
@@ -114,7 +115,10 @@ s, _ := strftime.New(`%A %d %B %Y`, strftime.WithLocale(french))
 is indexed by `time.Weekday` (Sunday is index 0). Any name left empty falls
 back to the English default, so a partial `Locale` never yields blank output.
 Numeric specifiers (`%d`, `%m`, `%Y`, ...) are locale-invariant and unaffected.
-Start from `strftime.DefaultLocale()` if you want to override only a few names.
+
+`Locale` is an interface, so you can also implement it yourself to back the
+names with a map, computed values, or an external dataset. `DefaultLocale()`
+returns the English implementation.
 
 ## Inflected languages
 

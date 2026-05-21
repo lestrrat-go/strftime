@@ -74,7 +74,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
 	ds := defaultSpecificationSet
 	var extraSpecifications []*optSpecificationPair
-	var locale *Locale
+	var locale Locale
 	for _, option := range options {
 		switch option.Name() {
 		case optSpecificationSet:
@@ -87,7 +87,7 @@ func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
 			}
 		case optLocale:
 			if v, ok := option.Value().(Locale); ok {
-				locale = mergeLocale(v)
+				locale = v
 			}
 		}
 	}

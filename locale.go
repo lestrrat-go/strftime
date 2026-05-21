@@ -6,90 +6,139 @@ import (
 	"time"
 )
 
-// MonthNames holds the twelve localized month names, indexed by
-// time.Month minus one (January is index 0, December is index 11).
+// MonthNames holds twelve month names, indexed by time.Month minus one
+// (January is index 0, December is index 11). It is used as the argument to
+// WithMonths and WithShortMonths.
 type MonthNames [12]string
 
-// WeekdayNames holds the seven localized weekday names, indexed by
-// time.Weekday (Sunday is index 0, Saturday is index 6).
+// WeekdayNames holds seven weekday names, indexed by time.Weekday (Sunday is
+// index 0, Saturday is index 6). It is used as the argument to WithWeekdays
+// and WithShortWeekdays.
 type WeekdayNames [7]string
 
-// Locale carries the locale-dependent strings used by the name-producing
-// conversion specifiers (%A, %a, %B, %b, %h, %p). It contains no logic and
-// no external data: you populate it with the names for your language and
-// pass it via WithLocale.
+// Locale supplies the locale-dependent strings used by the name-producing
+// conversion specifiers (%A, %a, %B, %b, %h, %p). The library ships no locale
+// data of its own: build a Locale for your language with NewLocale, or
+// implement this interface yourself to back it with any source (a map,
+// computed values, an external CLDR dataset, ...).
 //
-// Month and weekday names are split into a "format" context and a
-// "stand-alone" context. In many languages (Russian, Czech, Polish, Greek,
-// ...) a month name takes a different grammatical form when it appears next
-// to a day number ("2 января") than when it stands alone ("январь"). The
-// format fields (Months, ShortMonths) hold the in-date form; the standalone
-// fields hold the nominative form.
+// Months are addressed by time.Month and weekdays by time.Weekday, so an
+// implementation never has to worry about index conventions.
 //
-// Only the format fields are currently reachable through the standard
-// conversion specifiers. To format the two contexts correctly today, compile
-// two Strftime objects with two Locales — one whose Months hold the in-date
-// form for patterns like "%-d %B", and one whose Months hold the stand-alone
-// form for patterns like "%B %Y". The standalone fields are reserved for a
-// future %OB/%Ob specifier and may be left zero if you do not need them.
-//
-// Any entry left as the empty string falls back to the English default, so a
-// partially-filled Locale never produces blank output.
-type Locale struct {
-	Months      MonthNames // %B — full month name (in-date / format context)
-	ShortMonths MonthNames // %b, %h — abbreviated month name (format context)
-
-	StandaloneMonths      MonthNames // reserved for %OB — full, stand-alone context
-	StandaloneShortMonths MonthNames // reserved for %Ob — abbreviated, stand-alone
-
-	Weekdays      WeekdayNames // %A — full weekday name
-	ShortWeekdays WeekdayNames // %a — abbreviated weekday name
-
-	AMPM [2]string // %p — index 0 for hours before noon, 1 for noon onward
+// Some languages (Russian, Czech, Polish, Greek, ...) inflect a month name
+// depending on whether it stands alone or sits next to a day number — e.g.
+// Russian "январь" (stand-alone) vs "2 января" (in a date). A Locale returns a
+// single form per month, so format each grammatical context with its own
+// Strftime object, each compiled with the Locale that holds the matching form.
+type Locale interface {
+	Month(time.Month) string          // full month name (%B)
+	ShortMonth(time.Month) string     // abbreviated month name (%b, %h)
+	Weekday(time.Weekday) string      // full weekday name (%A)
+	ShortWeekday(time.Weekday) string // abbreviated weekday name (%a)
+	Meridiem(hour int) string         // AM/PM marker for the given 0-23 hour (%p)
 }
 
-// DefaultLocale returns the English locale, derived entirely from the
-// standard library's time package. It is a convenient starting point if you
-// want to override only some of the names.
-func DefaultLocale() Locale {
-	var l Locale
+// localeData is the array-backed Locale implementation produced by NewLocale
+// and DefaultLocale. Its fields are unexported and never mutated after
+// construction, so a Locale is safe to share across goroutines.
+type localeData struct {
+	months        [12]string
+	shortMonths   [12]string
+	weekdays      [7]string
+	shortWeekdays [7]string
+	meridiem      [2]string
+}
+
+func (d *localeData) Month(m time.Month) string          { return d.months[int(m)-1] }
+func (d *localeData) ShortMonth(m time.Month) string     { return d.shortMonths[int(m)-1] }
+func (d *localeData) Weekday(w time.Weekday) string      { return d.weekdays[int(w)] }
+func (d *localeData) ShortWeekday(w time.Weekday) string { return d.shortWeekdays[int(w)] }
+
+func (d *localeData) Meridiem(hour int) string {
+	if hour < 12 {
+		return d.meridiem[0]
+	}
+	return d.meridiem[1]
+}
+
+// englishLocaleData builds the English locale entirely from the standard
+// library's time package, so no name data is hard-coded here.
+func englishLocaleData() *localeData {
+	d := &localeData{meridiem: [2]string{"AM", "PM"}}
 	for m := time.January; m <= time.December; m++ {
 		full := m.String()
-		l.Months[m-1] = full
-		l.ShortMonths[m-1] = full[:3]
-		l.StandaloneMonths[m-1] = full
-		l.StandaloneShortMonths[m-1] = full[:3]
+		d.months[m-1] = full
+		d.shortMonths[m-1] = full[:3]
 	}
-	for d := time.Sunday; d <= time.Saturday; d++ {
-		full := d.String()
-		l.Weekdays[d] = full
-		l.ShortWeekdays[d] = full[:3]
+	for w := time.Sunday; w <= time.Saturday; w++ {
+		full := w.String()
+		d.weekdays[w] = full
+		d.shortWeekdays[w] = full[:3]
 	}
-	l.AMPM = [2]string{"AM", "PM"}
-	return l
+	return d
 }
 
-// mergeLocale overlays the non-empty entries of loc onto the English default,
-// so any name the caller did not provide degrades to English rather than to
-// an empty string. The result lives on the heap and is pointed into by the
-// appenders created in applyLocale, keeping it alive for their lifetime.
-func mergeLocale(loc Locale) *Locale {
-	merged := DefaultLocale()
-	overlayMonths(&merged.Months, loc.Months)
-	overlayMonths(&merged.ShortMonths, loc.ShortMonths)
-	overlayMonths(&merged.StandaloneMonths, loc.StandaloneMonths)
-	overlayMonths(&merged.StandaloneShortMonths, loc.StandaloneShortMonths)
-	overlayWeekdays(&merged.Weekdays, loc.Weekdays)
-	overlayWeekdays(&merged.ShortWeekdays, loc.ShortWeekdays)
-	for i, v := range loc.AMPM {
-		if v != "" {
-			merged.AMPM[i] = v
+// DefaultLocale returns the English locale. It is the fallback for any name a
+// custom Locale leaves unset, and a convenient base for NewLocale.
+func DefaultLocale() Locale {
+	return englishLocaleData()
+}
+
+// LocaleOption configures a Locale built by NewLocale.
+type LocaleOption interface {
+	configureLocale(*localeData)
+}
+
+type localeOptionFunc func(*localeData)
+
+func (f localeOptionFunc) configureLocale(d *localeData) { f(d) }
+
+// NewLocale creates a Locale from the supplied options, starting from the
+// English locale. Any name an option leaves as the empty string keeps its
+// English default, so a partially-specified Locale never produces blank
+// output.
+func NewLocale(options ...LocaleOption) Locale {
+	d := englishLocaleData()
+	for _, o := range options {
+		o.configureLocale(d)
+	}
+	return d
+}
+
+// WithMonths sets the full month names (%B), indexed by time.Month minus one.
+func WithMonths(names MonthNames) LocaleOption {
+	return localeOptionFunc(func(d *localeData) { overlay12(&d.months, names) })
+}
+
+// WithShortMonths sets the abbreviated month names (%b, %h).
+func WithShortMonths(names MonthNames) LocaleOption {
+	return localeOptionFunc(func(d *localeData) { overlay12(&d.shortMonths, names) })
+}
+
+// WithWeekdays sets the full weekday names (%A), indexed by time.Weekday.
+func WithWeekdays(names WeekdayNames) LocaleOption {
+	return localeOptionFunc(func(d *localeData) { overlay7(&d.weekdays, names) })
+}
+
+// WithShortWeekdays sets the abbreviated weekday names (%a).
+func WithShortWeekdays(names WeekdayNames) LocaleOption {
+	return localeOptionFunc(func(d *localeData) { overlay7(&d.shortWeekdays, names) })
+}
+
+// WithMeridiem sets the AM/PM markers (%p). An empty string keeps the English
+// default for that marker.
+func WithMeridiem(am, pm string) LocaleOption {
+	return localeOptionFunc(func(d *localeData) {
+		if am != "" {
+			d.meridiem[0] = am
 		}
-	}
-	return &merged
+		if pm != "" {
+			d.meridiem[1] = pm
+		}
+	})
 }
 
-func overlayMonths(dst *MonthNames, src MonthNames) {
+func overlay12(dst *[12]string, src MonthNames) {
 	for i, v := range src {
 		if v != "" {
 			dst[i] = v
@@ -97,7 +146,7 @@ func overlayMonths(dst *MonthNames, src MonthNames) {
 	}
 }
 
-func overlayWeekdays(dst *WeekdayNames, src WeekdayNames) {
+func overlay7(dst *[7]string, src WeekdayNames) {
 	for i, v := range src {
 		if v != "" {
 			dst[i] = v
@@ -108,17 +157,17 @@ func overlayWeekdays(dst *WeekdayNames, src WeekdayNames) {
 // applyLocale registers the name-producing appenders that read from loc onto
 // the specification set. It is invoked before any explicit WithSpecification
 // overrides, so a caller can still replace an individual specifier.
-func applyLocale(ds SpecificationSet, loc *Locale) error {
+func applyLocale(ds SpecificationSet, loc Locale) error {
 	pairs := []struct {
 		b byte
 		a Appender
 	}{
-		{'A', weekdayName{names: &loc.Weekdays}},
-		{'a', weekdayName{names: &loc.ShortWeekdays}},
-		{'B', monthName{names: &loc.Months}},
-		{'b', monthName{names: &loc.ShortMonths}},
-		{'h', monthName{names: &loc.ShortMonths}},
-		{'p', ampmName{names: &loc.AMPM}},
+		{'A', weekdayNameAppender{loc: loc}},
+		{'a', weekdayNameAppender{loc: loc, short: true}},
+		{'B', monthNameAppender{loc: loc}},
+		{'b', monthNameAppender{loc: loc, short: true}},
+		{'h', monthNameAppender{loc: loc, short: true}},
+		{'p', meridiemAppender{loc: loc}},
 	}
 	for _, p := range pairs {
 		if err := ds.Set(p.b, p.a); err != nil {
@@ -128,41 +177,46 @@ func applyLocale(ds SpecificationSet, loc *Locale) error {
 	return nil
 }
 
-type monthName struct {
-	names *MonthNames
+type monthNameAppender struct {
+	loc   Locale
+	short bool
 }
 
-func (v monthName) Append(b []byte, t time.Time) []byte {
-	return append(b, v.names[int(t.Month())-1]...)
-}
-
-func (v monthName) dump(out io.Writer) {
-	fmt.Fprintf(out, "monthName")
-}
-
-type weekdayName struct {
-	names *WeekdayNames
-}
-
-func (v weekdayName) Append(b []byte, t time.Time) []byte {
-	return append(b, v.names[int(t.Weekday())]...)
-}
-
-func (v weekdayName) dump(out io.Writer) {
-	fmt.Fprintf(out, "weekdayName")
-}
-
-type ampmName struct {
-	names *[2]string
-}
-
-func (v ampmName) Append(b []byte, t time.Time) []byte {
-	if t.Hour() < 12 {
-		return append(b, v.names[0]...)
+func (v monthNameAppender) Append(b []byte, t time.Time) []byte {
+	if v.short {
+		return append(b, v.loc.ShortMonth(t.Month())...)
 	}
-	return append(b, v.names[1]...)
+	return append(b, v.loc.Month(t.Month())...)
 }
 
-func (v ampmName) dump(out io.Writer) {
-	fmt.Fprintf(out, "ampmName")
+func (v monthNameAppender) dump(out io.Writer) {
+	fmt.Fprintf(out, "monthName(short=%t)", v.short)
+}
+
+type weekdayNameAppender struct {
+	loc   Locale
+	short bool
+}
+
+func (v weekdayNameAppender) Append(b []byte, t time.Time) []byte {
+	if v.short {
+		return append(b, v.loc.ShortWeekday(t.Weekday())...)
+	}
+	return append(b, v.loc.Weekday(t.Weekday())...)
+}
+
+func (v weekdayNameAppender) dump(out io.Writer) {
+	fmt.Fprintf(out, "weekdayName(short=%t)", v.short)
+}
+
+type meridiemAppender struct {
+	loc Locale
+}
+
+func (v meridiemAppender) Append(b []byte, t time.Time) []byte {
+	return append(b, v.loc.Meridiem(t.Hour())...)
+}
+
+func (v meridiemAppender) dump(out io.Writer) {
+	fmt.Fprintf(out, "meridiem")
 }
