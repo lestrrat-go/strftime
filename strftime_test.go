@@ -26,6 +26,37 @@ func TestExclusion(t *testing.T) {
 	}
 }
 
+func TestFormatCache(t *testing.T) {
+	const pattern = `%Y-%m-%d %H:%M:%S`
+	expected, err := strftime.New(pattern)
+	if !assert.NoError(t, err, `strftime.New succeeds`) {
+		return
+	}
+
+	// Repeated calls must return identical, correct results whether or not
+	// the pattern was already cached.
+	for i := 0; i < 3; i++ {
+		s, err := strftime.Format(pattern, ref)
+		if !assert.NoError(t, err, `strftime.Format succeeds`) {
+			return
+		}
+		assert.Equal(t, expected.FormatString(ref), s, `cached Format matches compiled output`)
+	}
+
+	// Passing options bypasses the cache but must still work.
+	withOpt, err := strftime.Format(`%L`, ref, strftime.WithMilliseconds('L'))
+	if !assert.NoError(t, err, `strftime.Format with options succeeds`) {
+		return
+	}
+	assert.Equal(t, "123", withOpt, `option-based Format produces milliseconds`)
+
+	// Invalid patterns must return an error and must not be cached.
+	for i := 0; i < 2; i++ {
+		_, err := strftime.Format(`%`, ref)
+		assert.Error(t, err, `invalid pattern returns error`)
+	}
+}
+
 func TestInvalid(t *testing.T) {
 	_, err := strftime.New("%")
 	if !assert.Error(t, err, `strftime.New should return error`) {

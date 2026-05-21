@@ -22,8 +22,8 @@ var (
 	dayOfMonthZeroPad           = StdlibFormat("02")
 	dayOfMonthSpacePad          = StdlibFormat("_2")
 	ymd                         = StdlibFormat("2006-01-02")
-	twentyFourHourClockZeroPad  = &hourPadded{twelveHour: false, pad: '0'}
-	twelveHourClockZeroPad      = &hourPadded{twelveHour: true, pad: '0'}
+	twentyFourHourClockZeroPad  = StdlibFormat("15")
+	twelveHourClockZeroPad      = StdlibFormat("03")
 	dayOfYear                   = AppendFunc(appendDayOfYear)
 	twentyFourHourClockSpacePad = &hourPadded{twelveHour: false, pad: ' '}
 	twelveHourClockSpacePad     = &hourPadded{twelveHour: true, pad: ' '}
