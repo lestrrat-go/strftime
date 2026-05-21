@@ -1,4 +1,4 @@
-.PHONY: bench realclean cover viewcover test lint
+.PHONY: bench realclean cover viewcover test lint imports
 
 bench:
 	go test -tags bench -benchmem -bench .

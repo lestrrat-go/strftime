@@ -72,14 +72,18 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 }
 
 func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
-	var ds SpecificationSet = defaultSpecificationSet
+	ds := defaultSpecificationSet
 	var extraSpecifications []*optSpecificationPair
 	for _, option := range options {
 		switch option.Name() {
 		case optSpecificationSet:
-			ds = option.Value().(SpecificationSet)
+			if v, ok := option.Value().(SpecificationSet); ok {
+				ds = v
+			}
 		case optSpecification:
-			extraSpecifications = append(extraSpecifications, option.Value().(*optSpecificationPair))
+			if v, ok := option.Value().(*optSpecificationPair); ok {
+				extraSpecifications = append(extraSpecifications, v)
+			}
 		}
 	}
 
@@ -99,7 +103,7 @@ func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
 }
 
 var fmtAppendExecutorPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		var h appenderExecutor
 		h.dst = make([]byte, 0, 32)
 		return &h
@@ -107,7 +111,8 @@ var fmtAppendExecutorPool = sync.Pool{
 }
 
 func getFmtAppendExecutor() *appenderExecutor {
-	return fmtAppendExecutorPool.Get().(*appenderExecutor)
+	e, _ := fmtAppendExecutorPool.Get().(*appenderExecutor)
+	return e
 }
 
 func releasdeFmtAppendExecutor(v *appenderExecutor) {
@@ -178,12 +183,12 @@ func (f *Strftime) Pattern() string {
 func (f *Strftime) Format(dst io.Writer, t time.Time) error {
 	const bufSize = 64
 	var b []byte
-	max := len(f.pattern) + 10
-	if max < bufSize {
+	bufLen := len(f.pattern) + 10
+	if bufLen < bufSize {
 		var buf [bufSize]byte
 		b = buf[:0]
 	} else {
-		b = make([]byte, 0, max)
+		b = make([]byte, 0, bufLen)
 	}
 	if _, err := dst.Write(f.format(b, t)); err != nil {
 		return err
@@ -217,12 +222,12 @@ func (f *Strftime) format(b []byte, t time.Time) []byte {
 func (f *Strftime) FormatString(t time.Time) string {
 	const bufSize = 64
 	var b []byte
-	max := len(f.pattern) + 10
-	if max < bufSize {
+	bufLen := len(f.pattern) + 10
+	if bufLen < bufSize {
 		var buf [bufSize]byte
 		b = buf[:0]
 	} else {
-		b = make([]byte, 0, max)
+		b = make([]byte, 0, bufLen)
 	}
 	return string(f.format(b, t))
 }
