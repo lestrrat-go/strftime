@@ -88,6 +88,23 @@ Formats the time according to the pre-compiled pattern, and returns the result s
 | %z      | the time zone offset from UTC |
 | %%      | a '%' |
 
+# NO-PADDING FLAG
+
+A `-` (glibc) or `#` (Windows) flag may be placed between the `%` and the
+conversion specifier to suppress the leading zero/blank padding on numeric
+fields. For example, given `2006-01-02 03:04:05`:
+
+| pattern | result |
+|---------|--------|
+| %m      | 01     |
+| %-m     | 1      |
+| %d      | 02     |
+| %-d     | 2      |
+| %H:%M   | 03:04  |
+| %-H:%-M | 3:4    |
+
+The flag has no effect on non-numeric fields (e.g. `%-A` is identical to `%A`).
+
 # EXTENSIONS / CUSTOM SPECIFICATIONS
 
 This library in general tries to be POSIX compliant, but sometimes you just need that

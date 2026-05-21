@@ -60,13 +60,29 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 			p = p[i:]
 		}
 
-		specification, err := ds.Lookup(p[1])
+		// An optional '-' (glibc) or '#' (Windows) flag between the '%' and
+		// the conversion specifier suppresses padding on numeric fields.
+		specIdx := 1
+		var noPad bool
+		if c := p[1]; c == '-' || c == '#' {
+			if len(p) < 3 {
+				return errors.New(`stray % at the end of pattern`)
+			}
+			noPad = true
+			specIdx = 2
+		}
+
+		specification, err := ds.Lookup(p[specIdx])
 		if err != nil {
 			return fmt.Errorf("pattern compilation failed: %w", err)
 		}
 
+		if noPad {
+			specification = unpadded{inner: specification}
+		}
+
 		handler.handle(specification)
-		p = p[2:]
+		p = p[specIdx+1:]
 	}
 	return nil
 }
