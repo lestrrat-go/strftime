@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -127,15 +128,62 @@ func releasdeFmtAppendExecutor(v *appenderExecutor) {
 	fmtAppendExecutorPool.Put(v)
 }
 
+// formatCacheLimit caps the number of distinct patterns Format will keep
+// compiled. The bound keeps memory usage predictable even when patterns are
+// derived from untrusted input; once it is reached, additional patterns are
+// formatted on the fly without being cached.
+const formatCacheLimit = 1024
+
+var (
+	formatCache    sync.Map // pattern string -> *Strftime
+	formatCacheLen atomic.Int64
+)
+
+// cachedStrftime returns a compiled Strftime for the default specification
+// set, reusing a previously compiled one when possible. It returns nil (with
+// no error) when the cache is full and the pattern was not already cached, so
+// the caller can fall back to compiling on the fly.
+func cachedStrftime(p string) (*Strftime, error) {
+	if v, ok := formatCache.Load(p); ok {
+		return v.(*Strftime), nil
+	}
+	if formatCacheLen.Load() >= formatCacheLimit {
+		return nil, nil
+	}
+
+	f, err := New(p)
+	if err != nil {
+		return nil, err
+	}
+	if actual, loaded := formatCache.LoadOrStore(p, f); loaded {
+		return actual.(*Strftime), nil
+	}
+	formatCacheLen.Add(1)
+	return f, nil
+}
+
 // Format takes the format `s` and the time `t` to produce the
-// format date/time. Note that this function re-compiles the
-// pattern every time it is called.
+// format date/time.
+//
+// When called without options, compiled patterns are cached (up to an
+// internal limit) so that repeated calls with the same pattern avoid
+// recompilation. Calls that pass options always compile on the fly.
 //
 // If you know beforehand that you will be reusing the pattern
 // within your application, consider creating a `Strftime` object
 // and reusing it.
 func Format(p string, t time.Time, options ...Option) (string, error) {
-	// TODO: this may be premature optimization
+	if len(options) == 0 {
+		f, err := cachedStrftime(p)
+		if err != nil {
+			return "", fmt.Errorf("failed to compile format: %w", err)
+		}
+		if f != nil {
+			return f.FormatString(t), nil
+		}
+		// cache is full: fall through and format on the fly
+	}
+
 	ds, err := getSpecificationSetFor(options...)
 	if err != nil {
 		return "", fmt.Errorf("failed to get specification set: %w", err)
