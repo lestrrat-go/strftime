@@ -23,6 +23,24 @@ func WithSpecificationSet(ds SpecificationSet) Option {
 	}
 }
 
+const optLocale = `opt-locale`
+
+// WithLocale overrides the name-producing conversion specifiers (%A, %a, %B,
+// %b, %h, %p) with the localized names carried by loc. Any name left empty in
+// loc falls back to the English default. Numeric specifiers (%d, %m, %Y, ...)
+// are locale-invariant and are unaffected.
+//
+// Because a single Locale supplies one form per name, format a context that
+// needs inflected month names (e.g. "%-d %B" vs "%B %Y" in Slavic languages)
+// by compiling a separate Strftime object per context, each with the Locale
+// holding the appropriate form. See the Locale documentation for details.
+func WithLocale(loc Locale) Option {
+	return &option{
+		name:  optLocale,
+		value: loc,
+	}
+}
+
 type optSpecificationPair struct {
 	name     byte
 	appender Appender

@@ -65,6 +65,7 @@ linters:
           - errcheck
           - errchkjson
           - forcetypeassert
+          - goconst
         path: _test\.go
     paths:
       - third_party$
