@@ -140,26 +140,28 @@ var (
 )
 
 // cachedStrftime returns a compiled Strftime for the default specification
-// set, reusing a previously compiled one when possible. It returns nil (with
-// no error) when the cache is full and the pattern was not already cached, so
-// the caller can fall back to compiling on the fly.
-func cachedStrftime(p string) (*Strftime, error) {
+// set, reusing a previously compiled one when possible. The boolean result is
+// false (with no error) when the cache is full and the pattern was not already
+// cached, so the caller can fall back to compiling on the fly.
+func cachedStrftime(p string) (*Strftime, bool, error) {
 	if v, ok := formatCache.Load(p); ok {
-		return v.(*Strftime), nil
+		f, _ := v.(*Strftime)
+		return f, true, nil
 	}
 	if formatCacheLen.Load() >= formatCacheLimit {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	f, err := New(p)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if actual, loaded := formatCache.LoadOrStore(p, f); loaded {
-		return actual.(*Strftime), nil
+		cached, _ := actual.(*Strftime)
+		return cached, true, nil
 	}
 	formatCacheLen.Add(1)
-	return f, nil
+	return f, true, nil
 }
 
 // Format takes the format `s` and the time `t` to produce the
@@ -174,11 +176,11 @@ func cachedStrftime(p string) (*Strftime, error) {
 // and reusing it.
 func Format(p string, t time.Time, options ...Option) (string, error) {
 	if len(options) == 0 {
-		f, err := cachedStrftime(p)
+		f, ok, err := cachedStrftime(p)
 		if err != nil {
 			return "", fmt.Errorf("failed to compile format: %w", err)
 		}
-		if f != nil {
+		if ok {
 			return f.FormatString(t), nil
 		}
 		// cache is full: fall through and format on the fly
