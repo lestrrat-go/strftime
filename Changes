@@ -1,6 +1,27 @@
 Changes
 =======
 
+v1.2.0 - 21 May 2026
+[New features]
+  * Support a no-padding flag for numeric specifiers. A `-` (glibc) or `#`
+    (Windows) flag placed between the `%` and the conversion specifier
+    suppresses the leading zero/blank padding, e.g. `%-m` -> "1" instead of
+    "01". (#91)
+  * Add locale support for name-based specifiers (%A, %a, %B, %b, %p, etc.).
+    A new `WithLocale` option accepts a `Locale`, with `DefaultLocale()`
+    providing the English defaults. Supporting `MonthNames` / `WeekdayNames`
+    types and a `LocaleOption` constructor are also exported. (#92)
+
+[Performance]
+  * Speed up formatting and pattern compilation. (#93)
+
+[Bug fixes]
+  * Fix the locking mechanism in the package-level `Lookup` function. (#76)
+
+[Miscellaneous]
+  * Modernize CI and lint infrastructure. (#87)
+  * Updated dependencies (testify, GitHub Actions, codecov).
+
 v1.1.1 - 29 Jul 2025
   * Implement %G and %g (#67)
 
