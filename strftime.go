@@ -10,7 +10,8 @@ import (
 )
 
 type compileHandler interface {
-	handle(Appender)
+	handleVerbatim(string)
+	handleSpec(Appender)
 }
 
 // compile, and create an appender list
@@ -18,7 +19,11 @@ type appenderListBuilder struct {
 	list *combiningAppend
 }
 
-func (alb *appenderListBuilder) handle(a Appender) {
+func (alb *appenderListBuilder) handleVerbatim(s string) {
+	alb.list.Append(Verbatim(s))
+}
+
+func (alb *appenderListBuilder) handleSpec(a Appender) {
 	alb.list.Append(a)
 }
 
@@ -28,20 +33,22 @@ type appenderExecutor struct {
 	dst []byte
 }
 
-func (ae *appenderExecutor) handle(a Appender) {
+// handleVerbatim appends the static text directly, avoiding the heap
+// allocation that boxing it into a verbatimw Appender would incur on
+// this per-call compile path.
+func (ae *appenderExecutor) handleVerbatim(s string) {
+	ae.dst = append(ae.dst, s...)
+}
+
+func (ae *appenderExecutor) handleSpec(a Appender) {
 	ae.dst = a.Append(ae.dst, ae.t)
 }
 
 func compile(handler compileHandler, p string, ds SpecificationSet) error {
 	for l := len(p); l > 0; l = len(p) {
-		// This is a really tight loop, so we don't even calls to
-		// Verbatim() to cuase extra stuff
-		var verbatim verbatimw
-
 		i := strings.IndexByte(p, '%')
 		if i < 0 {
-			verbatim.s = p
-			handler.handle(&verbatim)
+			handler.handleVerbatim(p)
 			// this is silly, but I don't trust break keywords when there's a
 			// possibility of this piece of code being rearranged
 			p = p[l:]
@@ -55,8 +62,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 		// we already know that i < l - 1
 		// everything up to the i is verbatim
 		if i > 0 {
-			verbatim.s = p[:i]
-			handler.handle(&verbatim)
+			handler.handleVerbatim(p[:i])
 			p = p[i:]
 		}
 
@@ -65,7 +71,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 			return fmt.Errorf("pattern compilation failed: %w", err)
 		}
 
-		handler.handle(specification)
+		handler.handleSpec(specification)
 		p = p[2:]
 	}
 	return nil
