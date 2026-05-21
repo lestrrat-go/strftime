@@ -44,12 +44,12 @@ func newImmutableSpecificationSet() SpecificationSet {
 	// it can now be removed, but we would need to change the entire
 	// populateDefaultSpecifications method, and I'm currently too lazy
 	// PRs welcome)
-	tmp := NewSpecificationSet()
+	tmp := newSpecificationSet()
 
 	ss := &specificationSet{
 		mutable: false,
 		lock:    nil, // never used, so intentionally not initialized
-		store:   tmp.(*specificationSet).store,
+		store:   tmp.store,
 	}
 
 	return ss
@@ -57,6 +57,10 @@ func newImmutableSpecificationSet() SpecificationSet {
 
 // NewSpecificationSet creates a specification set with the default specifications.
 func NewSpecificationSet() SpecificationSet {
+	return newSpecificationSet()
+}
+
+func newSpecificationSet() *specificationSet {
 	ds := &specificationSet{
 		mutable: true,
 		lock:    &sync.RWMutex{},

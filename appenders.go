@@ -210,8 +210,9 @@ type combiningAppend struct {
 
 func (ca *combiningAppend) Append(w Appender) {
 	if ca.prevCanCombine {
-		if wc, ok := w.(combiner); ok && wc.canCombine() {
-			ca.prev = ca.prev.(combiner).combine(wc)
+		prev, prevOK := ca.prev.(combiner)
+		if wc, ok := w.(combiner); ok && prevOK && wc.canCombine() {
+			ca.prev = prev.combine(wc)
 			ca.list[len(ca.list)-1] = ca.prev
 			return
 		}

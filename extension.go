@@ -15,7 +15,7 @@ var unixseconds Appender
 
 func init() {
 	milliseconds = AppendFunc(func(b []byte, t time.Time) []byte {
-		millisecond := int(t.Nanosecond()) / int(time.Millisecond)
+		millisecond := t.Nanosecond() / int(time.Millisecond)
 		if millisecond < 100 {
 			b = append(b, '0')
 		}
@@ -25,7 +25,7 @@ func init() {
 		return append(b, strconv.Itoa(millisecond)...)
 	})
 	microseconds = AppendFunc(func(b []byte, t time.Time) []byte {
-		microsecond := int(t.Nanosecond()) / int(time.Microsecond)
+		microsecond := t.Nanosecond() / int(time.Microsecond)
 		if microsecond < 100000 {
 			b = append(b, '0')
 		}
@@ -54,7 +54,7 @@ func Milliseconds() Appender {
 	return milliseconds
 }
 
-// Microsecond returns the Appender suitable for creating a zero-padded,
+// Microseconds returns the Appender suitable for creating a zero-padded,
 // 6-digit microsecond textual representation.
 func Microseconds() Appender {
 	return microseconds
