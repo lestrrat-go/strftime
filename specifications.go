@@ -25,7 +25,10 @@ type SpecificationSet interface {
 type specificationSet struct {
 	mutable bool
 	lock    rwLocker
-	store   map[byte]Appender
+	// store is indexed directly by the specification byte. Since keys are
+	// always a single byte, a fixed array avoids the hashing cost of a map
+	// on the hot compile path. A nil entry means "not set".
+	store [256]Appender
 }
 
 // The default specification set does not need any locking as it is never
@@ -64,7 +67,6 @@ func newSpecificationSet() *specificationSet {
 	ds := &specificationSet{
 		mutable: true,
 		lock:    &sync.RWMutex{},
-		store:   make(map[byte]Appender),
 	}
 	populateDefaultSpecifications(ds)
 
@@ -127,8 +129,8 @@ func (ds *specificationSet) Lookup(b byte) (Appender, error) {
 		ds.lock.RLock()
 		defer ds.lock.RUnlock()
 	}
-	v, ok := ds.store[b]
-	if !ok {
+	v := ds.store[b]
+	if v == nil {
 		return nil, fmt.Errorf(`lookup failed: '%%%c' was not found in specification set`, b)
 	}
 	return v, nil
@@ -141,7 +143,7 @@ func (ds *specificationSet) Delete(b byte) error {
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-	delete(ds.store, b)
+	ds.store[b] = nil
 	return nil
 }
 
