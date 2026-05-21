@@ -105,6 +105,51 @@ fields. For example, given `2006-01-02 03:04:05`:
 
 The flag has no effect on non-numeric fields (e.g. `%-A` is identical to `%A`).
 
+# LOCALIZATION
+
+By default the name-producing specifiers (`%A`, `%a`, `%B`, `%b`, `%h`, `%p`)
+emit English. To localize them, build a `Locale` with `NewLocale` and pass it
+via `WithLocale`. The library ships no locale data of its own — you supply the
+names for your language:
+
+```go
+french := strftime.NewLocale(
+  strftime.WithMonths(strftime.MonthNames{
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+  }),
+  strftime.WithWeekdays(strftime.WeekdayNames{
+    "dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi",
+  }),
+  // WithShortMonths, WithShortWeekdays, WithMeridiem ... optional
+)
+
+s, _ := strftime.New(`%A %d %B %Y`, strftime.WithLocale(french))
+// -> "lundi 02 janvier 2006"
+```
+
+`MonthNames` is indexed by month minus one (January is index 0); `WeekdayNames`
+is indexed by `time.Weekday` (Sunday is index 0). Any name left empty falls
+back to the English default, so a partial `Locale` never yields blank output.
+Numeric specifiers (`%d`, `%m`, `%Y`, ...) are locale-invariant and unaffected.
+
+`Locale` is an interface, so you can also implement it yourself to back the
+names with a map, computed values, or an external dataset. `DefaultLocale()`
+returns the English implementation.
+
+## Inflected languages
+
+In some languages (Russian, Czech, Polish, Greek, ...) a month name changes
+form depending on whether it stands alone or appears next to a day number —
+e.g. Russian "январь" (stand-alone) vs "2 января" (in a date). Because a single
+`Locale` carries one form per name, format each context with its own compiled
+`Strftime`:
+
+```go
+inDate, _   := strftime.New(`%d %B %Y`, strftime.WithLocale(ruInDate))   // января
+header, _   := strftime.New(`%B %Y`,    strftime.WithLocale(ruStandalone)) // январь
+```
+
 # EXTENSIONS / CUSTOM SPECIFICATIONS
 
 This library in general tries to be POSIX compliant, but sometimes you just need that

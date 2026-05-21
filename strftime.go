@@ -90,6 +90,7 @@ func compile(handler compileHandler, p string, ds SpecificationSet) error {
 func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
 	ds := defaultSpecificationSet
 	var extraSpecifications []*optSpecificationPair
+	var locale Locale
 	for _, option := range options {
 		switch option.Name() {
 		case optSpecificationSet:
@@ -100,14 +101,25 @@ func getSpecificationSetFor(options ...Option) (SpecificationSet, error) {
 			if v, ok := option.Value().(*optSpecificationPair); ok {
 				extraSpecifications = append(extraSpecifications, v)
 			}
+		case optLocale:
+			if v, ok := option.Value().(Locale); ok {
+				locale = v
+			}
 		}
 	}
 
-	if len(extraSpecifications) > 0 {
+	if locale != nil || len(extraSpecifications) > 0 {
 		// If ds is immutable, we're going to need to create a new
 		// one. oh what a waste!
 		if raw, ok := ds.(*specificationSet); ok && !raw.mutable {
 			ds = NewSpecificationSet()
+		}
+		// Apply the locale first so an explicit WithSpecification can still
+		// override an individual specifier.
+		if locale != nil {
+			if err := applyLocale(ds, locale); err != nil {
+				return nil, err
+			}
 		}
 		for _, v := range extraSpecifications {
 			if err := ds.Set(v.name, v.appender); err != nil {
