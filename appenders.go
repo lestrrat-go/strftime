@@ -188,6 +188,20 @@ func (v unpadded) Append(b []byte, t time.Time) []byte {
 	for i < len(s) && s[i] == ' ' {
 		i++
 	}
+	// Padding only applies to numeric values. Locale strings and composite
+	// fields can legitimately begin with spaces or zeros.
+	digits := i
+	if digits < len(s) && (s[digits] == '+' || s[digits] == '-') {
+		digits++
+	}
+	if digits == len(s) {
+		return append(b, s...)
+	}
+	for _, c := range s[digits:] {
+		if c < '0' || c > '9' {
+			return append(b, s...)
+		}
+	}
 	s = s[i:]
 
 	// keep a leading sign, if any (e.g. the "+"/"-" of %z)

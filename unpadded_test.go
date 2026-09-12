@@ -49,7 +49,7 @@ func TestUnpaddedFlag(t *testing.T) {
 
 func TestUnpaddedNonNumericUnchanged(t *testing.T) {
 	// Non-numeric fields are emitted unchanged when the flag is present.
-	for _, spec := range []string{"A", "B", "Z", "p"} {
+	for _, spec := range []string{"A", "B", "Z", "p", "D", "R", "T", "x"} {
 		plain, err := strftime.Format("%"+spec, unpadref)
 		require.NoError(t, err)
 		flagged, err := strftime.Format("%-"+spec, unpadref)
@@ -68,5 +68,26 @@ func TestUnpaddedStrayFlag(t *testing.T) {
 	for _, p := range []string{"%-", "%#", "foo %-"} {
 		_, err := strftime.Format(p, unpadref)
 		require.Errorf(t, err, "pattern %q should error", p)
+	}
+}
+
+func TestUnpaddedNonNumericLocale(t *testing.T) {
+	locale := strftime.NewLocale(
+		strftime.WithMonths(strftime.MonthNames{"01月"}),
+		strftime.WithMeridiem("  AM marker", "PM marker"),
+	)
+	for _, flag := range []string{"-", "#"} {
+		for _, tc := range []struct{ spec, want string }{
+			{"B", "01月"},
+			{"p", "  AM marker"},
+		} {
+			pattern := "%" + flag + tc.spec
+			got, err := strftime.Format(pattern, unpadref, strftime.WithLocale(locale))
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got, pattern)
+			compiled, err := strftime.New(pattern, strftime.WithLocale(locale))
+			require.NoError(t, err)
+			require.Equal(t, tc.want, compiled.FormatString(unpadref), pattern)
+		}
 	}
 }
