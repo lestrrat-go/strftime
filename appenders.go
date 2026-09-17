@@ -188,6 +188,18 @@ func (v unpadded) Append(b []byte, t time.Time) []byte {
 	for i < len(s) && s[i] == ' ' {
 		i++
 	}
+	digits := i
+	if digits < len(s) && (s[digits] == '+' || s[digits] == '-') {
+		digits++
+	}
+	if digits == len(s) {
+		return append(b, s...)
+	}
+	for j := digits; j < len(s); j++ {
+		if s[j] < '0' || s[j] > '9' {
+			return append(b, s...)
+		}
+	}
 	s = s[i:]
 
 	// keep a leading sign, if any (e.g. the "+"/"-" of %z)

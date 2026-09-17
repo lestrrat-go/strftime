@@ -14,6 +14,23 @@ import (
 // day-of-year 002, UTC offset +0000.
 var unpadref = time.Date(2006, time.January, 2, 3, 4, 5, 0, time.UTC)
 
+func requireUnpaddedUnchanged(t *testing.T, spec string, ref time.Time, options ...strftime.Option) {
+	t.Helper()
+
+	plain, err := strftime.Format("%"+spec, ref, options...)
+	require.NoError(t, err)
+	for _, flag := range []string{"-", "#"} {
+		pattern := "%" + flag + spec
+		flagged, err := strftime.Format(pattern, ref, options...)
+		require.NoError(t, err)
+		require.Equal(t, plain, flagged, pattern)
+
+		compiled, err := strftime.New(pattern, options...)
+		require.NoError(t, err)
+		require.Equal(t, plain, compiled.FormatString(ref), pattern)
+	}
+}
+
 func TestUnpaddedFlag(t *testing.T) {
 	for _, tc := range []struct {
 		spec     byte
@@ -48,13 +65,56 @@ func TestUnpaddedFlag(t *testing.T) {
 }
 
 func TestUnpaddedNonNumericUnchanged(t *testing.T) {
-	// Non-numeric fields are emitted unchanged when the flag is present.
-	for _, spec := range []string{"A", "B", "Z", "p"} {
-		plain, err := strftime.Format("%"+spec, unpadref)
+	for _, spec := range []string{
+		"A", "a", "B", "b", "c", "D", "F", "h", "n", "p",
+		"R", "r", "T", "t", "v", "X", "x", "Z", "%",
+	} {
+		t.Run(spec, func(t *testing.T) {
+			requireUnpaddedUnchanged(t, spec, unpadref)
+		})
+	}
+}
+
+func TestUnpaddedNumericLocaleValuesUnchanged(t *testing.T) {
+	locale := strftime.NewLocale(
+		strftime.WithMonths(strftime.MonthNames{"01"}),
+		strftime.WithShortMonths(strftime.MonthNames{"02"}),
+		strftime.WithWeekdays(strftime.WeekdayNames{"", "03"}),
+		strftime.WithShortWeekdays(strftime.WeekdayNames{"", "04"}),
+		strftime.WithMeridiem("05", "06"),
+	)
+	for _, spec := range []string{"A", "a", "B", "b", "h", "p"} {
+		t.Run(spec, func(t *testing.T) {
+			requireUnpaddedUnchanged(t, spec, unpadref, strftime.WithLocale(locale))
+		})
+	}
+}
+
+func TestUnpaddedNumericTimezoneNameUnchanged(t *testing.T) {
+	ref := unpadref.In(time.FixedZone("01", 0))
+	requireUnpaddedUnchanged(t, "Z", ref)
+}
+
+func TestUnpaddedCustomNonNumericOutputUnchanged(t *testing.T) {
+	for _, value := range []string{"01/02/06", "01月", "  01 marker"} {
+		t.Run(value, func(t *testing.T) {
+			requireUnpaddedUnchanged(t, "Q", unpadref,
+				strftime.WithSpecification('Q', strftime.Verbatim(value)))
+		})
+	}
+}
+
+func TestUnpaddedCustomNumericOutput(t *testing.T) {
+	ref := time.Date(2006, time.January, 2, 3, 4, 5, int(12*time.Millisecond), time.UTC)
+	for _, flag := range []string{"-", "#"} {
+		pattern := "%" + flag + "L"
+		got, err := strftime.Format(pattern, ref, strftime.WithMilliseconds('L'))
 		require.NoError(t, err)
-		flagged, err := strftime.Format("%-"+spec, unpadref)
+		require.Equal(t, "12", got, pattern)
+
+		compiled, err := strftime.New(pattern, strftime.WithMilliseconds('L'))
 		require.NoError(t, err)
-		require.Equalf(t, plain, flagged, "%%-%s should match %%%s", spec, spec)
+		require.Equal(t, "12", compiled.FormatString(ref), pattern)
 	}
 }
 
