@@ -625,3 +625,31 @@ func TestFormat_WeekYearBoundaries(t *testing.T) {
 		assert.Equal(t, expectedg, gotg, "Week year without century should match for %v", testDate)
 	}
 }
+
+func TestAbbreviatedNameLiteralSuffixes(t *testing.T) {
+	date := time.Date(2024, time.February, 6, 0, 0, 0, 0, time.UTC)
+	for _, test := range []struct{ pattern, want string }{
+		{"%aday", "Tueday"},
+		{"%ax", "Tuex"},
+		{"%buary", "Feb" + "uary"},
+		{"%bx", "Febx"},
+		{"%hruary", "February"},
+		{"%a day", "Tue day"},
+		{"%b uary", "Feb uary"},
+	} {
+		t.Run(test.pattern, func(t *testing.T) {
+			compiled, err := strftime.New(test.pattern)
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.Equal(t, test.want, compiled.FormatString(date))
+			assert.Equal(t, test.want, string(compiled.FormatBuffer(nil, date)))
+			var dst bytes.Buffer
+			assert.NoError(t, compiled.Format(&dst, date))
+			assert.Equal(t, test.want, dst.String())
+			got, err := strftime.Format(test.pattern, date)
+			assert.NoError(t, err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
