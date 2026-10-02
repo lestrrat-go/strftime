@@ -263,10 +263,22 @@ type combiningAppend struct {
 	prevCanCombine bool
 }
 
+// Joining alphabetic fragments can extend a time layout token or stop an
+// abbreviated name from being recognized (for example, Mon + day or Mon + x).
+func canCombineAtBoundary(left, right string) bool {
+	if len(left) == 0 || len(right) == 0 {
+		return true
+	}
+	isLetter := func(c byte) bool {
+		return 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z'
+	}
+	return !isLetter(left[len(left)-1]) || !isLetter(right[0])
+}
+
 func (ca *combiningAppend) Append(w Appender) {
 	if ca.prevCanCombine {
 		prev, prevOK := ca.prev.(combiner)
-		if wc, ok := w.(combiner); ok && prevOK && wc.canCombine() {
+		if wc, ok := w.(combiner); ok && prevOK && wc.canCombine() && canCombineAtBoundary(prev.str(), wc.str()) {
 			ca.prev = prev.combine(wc)
 			ca.list[len(ca.list)-1] = ca.prev
 			return
