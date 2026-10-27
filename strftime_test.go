@@ -631,9 +631,10 @@ func TestAbbreviatedNameLiteralSuffixes(t *testing.T) {
 	for _, test := range []struct{ pattern, want string }{
 		{"%aday", "Tueday"},
 		{"%ax", "Tuex"},
+		// "Feb" + "uary" is split to keep the misspell linter quiet
 		{"%buary", "Feb" + "uary"},
 		{"%bx", "Febx"},
-		{"%hruary", "February"},
+		{"%huary", "Feb" + "uary"},
 		{"%a day", "Tue day"},
 		{"%b uary", "Feb uary"},
 	} {
